@@ -9,11 +9,12 @@ import {
     getPendingInvitationsForTeam,
     getTeamInvitations,
     updateInvitationStatus,
+    getCaptainStats,
     subscribeToChanges
 } from '../utils/db';
-import { Team, Player, TeamInvitation } from '../types';
+import { Team, Player, TeamInvitation, CaptainStats } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { Users, PlusCircle, Send, Trophy, TrendingUp, Calendar, UserPlus, CheckCircle, XCircle, Upload } from 'lucide-react';
+import { Users, PlusCircle, Send, Trophy, TrendingUp, Calendar, UserPlus, CheckCircle, XCircle, Upload, Shield, Award, Star } from 'lucide-react';
 
 export const CaptainDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -24,6 +25,7 @@ export const CaptainDashboard: React.FC = () => {
     const [pendingInvitations, setPendingInvitations] = useState<TeamInvitation[]>([]);
     const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
     const [showInvitePlayerModal, setShowInvitePlayerModal] = useState(false);
+    const [captainStats, setCaptainStats] = useState<CaptainStats | null>(null);
     const [loading, setLoading] = useState(true);
 
     // Only captains can access
@@ -48,6 +50,12 @@ export const CaptainDashboard: React.FC = () => {
             if (captainTeam) {
                 const invitations = await getPendingInvitationsForTeam(captainTeam.id);
                 setPendingInvitations(invitations);
+            }
+
+            // Load captain stats
+            if (user) {
+                const stats = await getCaptainStats(user.id);
+                setCaptainStats(stats || null);
             }
 
             setLoading(false);
@@ -93,6 +101,66 @@ export const CaptainDashboard: React.FC = () => {
 
             {myTeam ? (
                 <>
+                    {captainStats && (
+                        <>
+                            {/* Captain Rank Badge */}
+                            <div className="bg-gradient-to-r from-yellow-500/20 via-elkawera-accent/20 to-blue-500/20 border border-elkawera-accent/30 rounded-2xl p-6 mb-8">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-16 rounded-full bg-elkawera-accent/20 border-2 border-elkawera-accent flex items-center justify-center">
+                                            <Shield size={32} className="text-elkawera-accent" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs uppercase text-gray-400 font-bold tracking-wider">Captain Rank</p>
+                                            <h3 className="text-2xl font-display font-bold text-elkawera-accent">{captainStats.rank}</h3>
+                                            <p className="text-sm text-gray-400">{captainStats.rankPoints} Rank Points</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Trophy size={16} className="text-yellow-400" />
+                                            <span className="text-sm text-gray-400">Record:</span>
+                                            <span className="font-bold text-green-400">{captainStats.wins}W</span>
+                                            <span className="font-bold text-gray-400">{captainStats.draws}D</span>
+                                            <span className="font-bold text-red-400">{captainStats.losses}L</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Users size={16} className="text-blue-400" />
+                                            <span className="text-sm text-gray-400">Players Recruited:</span>
+                                            <span className="font-bold">{captainStats.playersRecruited}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Rank Progress Bar */}
+                                <div className="mt-4">
+                                    <div className="flex justify-between text-xs text-gray-400 mb-2">
+                                        <span>Progress to Next Rank</span>
+                                        <span>
+                                            {captainStats.rank === 'Bronze Captain' && '100 points for Silver'}
+                                            {captainStats.rank === 'Silver Captain' && '300 points for Gold'}
+                                            {captainStats.rank === 'Gold Captain' && '600 points for Elite'}
+                                            {captainStats.rank === 'Elite Captain' && '1000 points for Master'}
+                                            {captainStats.rank === 'Master Captain' && 'Max Rank Achieved!'}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-black/30 rounded-full h-3 overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-elkawera-accent to-yellow-400 transition-all duration-500"
+                                            style={{
+                                                width: `${captainStats.rank === 'Master Captain' ? 100 :
+                                                    captainStats.rank === 'Elite Captain' ? ((captainStats.rankPoints - 600) / 400 * 100) :
+                                                        captainStats.rank === 'Gold Captain' ? ((captainStats.rankPoints - 300) / 300 * 100) :
+                                                            captainStats.rank === 'Silver Captain' ? ((captainStats.rankPoints - 100) / 200 * 100) :
+                                                                (captainStats.rankPoints / 100 * 100)}%`
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                     {/* Team Overview */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
                         <div className="flex items-center justify-between mb-6">
@@ -300,9 +368,14 @@ const CreateTeamModal: React.FC<{
                 shortName: shortName.toUpperCase(),
                 color: '#00FF9D',
                 logoUrl: logoUrl || undefined,
-                captainId: user?.id,
+                captainId: user?.id || '',
+                captainName: user?.name || '',
                 experiencePoints: 0,
                 ranking: 0,
+                wins: 0,
+                draws: 0,
+                losses: 0,
+                totalMatches: 0,
                 createdAt: Date.now(),
             };
 

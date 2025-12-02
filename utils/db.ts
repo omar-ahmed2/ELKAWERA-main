@@ -1,8 +1,8 @@
-import { User, Player, CardType, Position, Match, MatchStatus, MatchEvent, PlayerEvaluation, Team, TeamInvitation, MatchVerification, MatchDispute, Notification, UserRole, PlayerRegistrationRequest } from '../types';
+import { User, Player, CardType, Position, Match, MatchStatus, MatchEvent, PlayerEvaluation, Team, TeamInvitation, MatchVerification, MatchDispute, Notification, UserRole, PlayerRegistrationRequest, CaptainStats, CaptainRank, MatchRequest } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 const DB_NAME = 'ElkaweraDB';
-const DB_VERSION = 7; // Bumped for match system
+const DB_VERSION = 8; // Bumped for enhanced captain system
 const PLAYER_STORE = 'players';
 const TEAM_STORE = 'teams';
 const USER_STORE = 'users';
@@ -11,6 +11,9 @@ const MATCH_STORE = 'matches';
 const MATCH_VERIFICATION_STORE = 'match_verifications';
 const TEAM_INVITATION_STORE = 'team_invitations';
 const MATCH_DISPUTE_STORE = 'match_disputes';
+const NOTIFICATION_STORE = 'notifications';
+const CAPTAIN_STATS_STORE = 'captain_stats';
+const MATCH_REQUEST_STORE = 'match_requests';
 
 // Broadcast Channel for Real-time Sync
 const syncChannel = new BroadcastChannel('elkawera_sync');
@@ -102,6 +105,30 @@ export const openDB = (): Promise<IDBDatabase> => {
         disputeStore.createIndex('matchId', 'matchId', { unique: false });
         disputeStore.createIndex('status', 'status', { unique: false });
       }
+
+      // Notifications Store (v8)
+      if (!db.objectStoreNames.contains(NOTIFICATION_STORE)) {
+        const notificationStore = db.createObjectStore(NOTIFICATION_STORE, { keyPath: 'id' });
+        notificationStore.createIndex('userId', 'userId', { unique: false });
+        notificationStore.createIndex('read', 'read', { unique: false });
+        notificationStore.createIndex('type', 'type', { unique: false });
+        notificationStore.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+
+      // Captain Stats Store (v8)
+      if (!db.objectStoreNames.contains(CAPTAIN_STATS_STORE)) {
+        const captainStatsStore = db.createObjectStore(CAPTAIN_STATS_STORE, { keyPath: 'userId' });
+        captainStatsStore.createIndex('rank', 'rank', { unique: false });
+        captainStatsStore.createIndex('rankPoints', 'rankPoints', { unique: false });
+      }
+
+      // Match Requests Store (v8)
+      if (!db.objectStoreNames.contains(MATCH_REQUEST_STORE)) {
+        const matchRequestStore = db.createObjectStore(MATCH_REQUEST_STORE, { keyPath: 'id' });
+        matchRequestStore.createIndex('status', 'status', { unique: false });
+        matchRequestStore.createIndex('requestedBy', 'requestedBy', { unique: false });
+        matchRequestStore.createIndex('matchId', 'matchId', { unique: false });
+      }
     };
   });
 };
@@ -153,75 +180,6 @@ export const registerUser = async (
         resolve(newUser);
       };
       addRequest.onerror = () => reject('Failed to register user');
-    };
-
-    checkRequest.onerror = () => reject('Database error checking email');
-  });
-};
-
-export const registerCaptain = async (
-  name: string,
-  email: string,
-  password: string,
-  age: number,
-  teamName: string,
-  teamAbbr: string,
-  teamLogo?: string
-): Promise<{ user: User; team: Team }> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([USER_STORE, TEAM_STORE], 'readwrite');
-    const userStore = transaction.objectStore(USER_STORE);
-    const teamStore = transaction.objectStore(TEAM_STORE);
-    const emailIndex = userStore.index('email');
-
-    const checkRequest = emailIndex.get(email);
-
-    checkRequest.onsuccess = () => {
-      if (checkRequest.result) {
-        reject('Email already registered');
-        return;
-      }
-
-      const userId = uuidv4();
-      const teamId = uuidv4();
-
-      const newCaptain: User = {
-        id: userId,
-        name,
-        email,
-        passwordHash: password,
-        role: 'captain',
-        age,
-        createdAt: Date.now()
-      };
-
-      const newTeam: Team = {
-        id: teamId,
-        name: teamName,
-        shortName: teamAbbr,
-        color: '#00FF9D', // Default color
-        logoUrl: teamLogo,
-        captainId: userId,
-        experiencePoints: 0,
-        ranking: 0,
-        createdAt: Date.now()
-      };
-
-      const addUserRequest = userStore.add(newCaptain);
-
-      addUserRequest.onsuccess = () => {
-        const addTeamRequest = teamStore.add(newTeam);
-
-        addTeamRequest.onsuccess = () => {
-          notifyChanges();
-          resolve({ user: newCaptain, team: newTeam });
-        };
-
-        addTeamRequest.onerror = () => reject('Failed to create team');
-      };
-
-      addUserRequest.onerror = () => reject('Failed to register captain');
     };
 
     checkRequest.onerror = () => reject('Database error checking email');
@@ -317,23 +275,7 @@ export const addNotificationToUser = async (userId: string, notification: Notifi
 
   const updatedUser = {
     ...user,
-    notifications: [notification, ...(user.notifications || [])] // Add to beginning
-  };
-
-  await updateUser(updatedUser);
-};
-
-export const markNotificationAsRead = async (userId: string, notificationId: string): Promise<void> => {
-  const user = await getUserById(userId);
-  if (!user || !user.notifications) return;
-
-  const updatedNotifications = user.notifications.map(n =>
-    n.id === notificationId ? { ...n, read: true } : n
-  );
-
-  const updatedUser = {
-    ...user,
-    notifications: updatedNotifications
+    notifications: [...(user.notifications || []), notification]
   };
 
   await updateUser(updatedUser);
@@ -431,9 +373,11 @@ export const deletePlayerAndNotifyUser = async (playerId: string): Promise<void>
   if (user) {
     const notification: Notification = {
       id: uuidv4(),
+      userId: user.id,
       type: 'card_deleted',
+      title: 'Player Card Removed',
       message: 'Your player card has been removed by an admin. Please create a new card when you log back in.',
-      timestamp: Date.now(),
+      createdAt: Date.now(),
       read: false
     };
 
@@ -764,16 +708,38 @@ export const getVerificationByTeam = async (matchId: string, teamId: string): Pr
 
 export const saveTeamInvitation = async (invitation: TeamInvitation): Promise<void> => {
   const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([TEAM_INVITATION_STORE], 'readwrite');
-    const store = transaction.objectStore(TEAM_INVITATION_STORE);
-    const request = store.put(invitation);
+  return new Promise(async (resolve, reject) => {
+    try {
+      const transaction = db.transaction([TEAM_INVITATION_STORE], 'readwrite');
+      const store = transaction.objectStore(TEAM_INVITATION_STORE);
+      const request = store.put(invitation);
 
-    request.onsuccess = () => {
-      notifyChanges();
-      resolve();
-    };
-    request.onerror = () => reject('Error saving team invitation');
+      request.onsuccess = async () => {
+        // Create notification for the invited player
+        const notification: Notification = {
+          id: uuidv4(),
+          userId: invitation.playerId,
+          type: 'team_invitation',
+          title: 'Team Invitation',
+          message: `You have been invited to join ${invitation.teamName} by ${invitation.captainName}`,
+          metadata: {
+            invitationId: invitation.id,
+            teamId: invitation.teamId,
+            teamName: invitation.teamName,
+            captainName: invitation.captainName
+          },
+          read: false,
+          createdAt: Date.now()
+        };
+        await createNotification(notification);
+
+        notifyChanges();
+        resolve();
+      };
+      request.onerror = () => reject('Error saving team invitation');
+    } catch (error) {
+      reject('Error saving team invitation');
+    }
   });
 };
 
@@ -818,7 +784,7 @@ export const updateInvitationStatus = async (invitationId: string, status: 'acce
       const store = transaction.objectStore(TEAM_INVITATION_STORE);
       const getRequest = store.get(invitationId);
 
-      getRequest.onsuccess = () => {
+      getRequest.onsuccess = async () => {
         const invitation = getRequest.result as TeamInvitation;
         if (!invitation) {
           reject('Invitation not found');
@@ -829,7 +795,51 @@ export const updateInvitationStatus = async (invitationId: string, status: 'acce
         invitation.respondedAt = Date.now();
 
         const updateRequest = store.put(invitation);
-        updateRequest.onsuccess = () => {
+        updateRequest.onsuccess = async () => {
+          // Handle side effects based on status
+          if (status === 'accepted') {
+            // 1. Update Player's teamId
+            const player = await getPlayerById(invitation.playerId);
+            if (player) {
+              player.teamId = invitation.teamId;
+              await savePlayer(player);
+            }
+
+            // 2. Notify Captain
+            const notification: Notification = {
+              id: uuidv4(),
+              userId: invitation.invitedBy,
+              type: 'invitation_accepted',
+              title: 'Invitation Accepted',
+              message: `${invitation.playerName} has accepted your invitation to join ${invitation.teamName}`,
+              metadata: {
+                invitationId: invitation.id,
+                playerId: invitation.playerId,
+                playerName: invitation.playerName
+              },
+              read: false,
+              createdAt: Date.now()
+            };
+            await createNotification(notification);
+          } else if (status === 'rejected') {
+            // Notify Captain
+            const notification: Notification = {
+              id: uuidv4(),
+              userId: invitation.invitedBy,
+              type: 'invitation_rejected',
+              title: 'Invitation Rejected',
+              message: `${invitation.playerName} has declined your invitation to join ${invitation.teamName}`,
+              metadata: {
+                invitationId: invitation.id,
+                playerId: invitation.playerId,
+                playerName: invitation.playerName
+              },
+              read: false,
+              createdAt: Date.now()
+            };
+            await createNotification(notification);
+          }
+
           notifyChanges();
           resolve();
         };
@@ -899,5 +909,269 @@ export const getPendingDisputes = async (): Promise<MatchDispute[]> => {
 
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject('Error fetching pending disputes');
+  });
+};
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export const createNotification = async (notification: Notification): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([NOTIFICATION_STORE], 'readwrite');
+    const store = transaction.objectStore(NOTIFICATION_STORE);
+    const request = store.add(notification);
+
+    request.onsuccess = () => {
+      notifyChanges();
+      resolve();
+    };
+    request.onerror = () => reject('Error creating notification');
+  });
+};
+
+export const getUserNotifications = async (userId: string): Promise<Notification[]> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([NOTIFICATION_STORE], 'readonly');
+    const store = transaction.objectStore(NOTIFICATION_STORE);
+    const index = store.index('userId');
+    const request = index.getAll(userId);
+
+    request.onsuccess = () => {
+      const notifications = request.result as Notification[];
+      notifications.sort((a, b) => b.createdAt - a.createdAt);
+      resolve(notifications);
+    };
+    request.onerror = () => reject('Error fetching notifications');
+  });
+};
+
+export const markNotificationAsRead = async (notificationId: string): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([NOTIFICATION_STORE], 'readwrite');
+    const store = transaction.objectStore(NOTIFICATION_STORE);
+    const getRequest = store.get(notificationId);
+
+    getRequest.onsuccess = () => {
+      const notification = getRequest.result as Notification;
+      if (notification) {
+        notification.read = true;
+        const putRequest = store.put(notification);
+        putRequest.onsuccess = () => {
+          notifyChanges();
+          resolve();
+        };
+        putRequest.onerror = () => reject('Error marking notification as read');
+      } else {
+        reject('Notification not found');
+      }
+    };
+    getRequest.onerror = () => reject('Error fetching notification');
+  });
+};
+
+export const getUnreadCount = async (userId: string): Promise<number> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([NOTIFICATION_STORE], 'readonly');
+    const store = transaction.objectStore(NOTIFICATION_STORE);
+    const index = store.index('userId');
+    const request = index.getAll(userId);
+
+    request.onsuccess = () => {
+      const notifications = request.result as Notification[];
+      const unreadCount = notifications.filter(n => !n.read).length;
+      resolve(unreadCount);
+    };
+    request.onerror = () => reject('Error counting unread notifications');
+  });
+};
+
+export const deleteNotification = async (notificationId: string): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([NOTIFICATION_STORE], 'readwrite');
+    const store = transaction.objectStore(NOTIFICATION_STORE);
+    const request = store.delete(notificationId);
+
+    request.onsuccess = () => {
+      notifyChanges();
+      resolve();
+    };
+    request.onerror = () => reject('Error deleting notification');
+  });
+};
+
+// ============================================
+// CAPTAIN STATS
+// ============================================
+
+export const getCaptainStats = async (userId: string): Promise<CaptainStats | undefined> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([CAPTAIN_STATS_STORE], 'readonly');
+    const store = transaction.objectStore(CAPTAIN_STATS_STORE);
+    const request = store.get(userId);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject('Error fetching captain stats');
+  });
+};
+
+export const saveCaptainStats = async (stats: CaptainStats): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([CAPTAIN_STATS_STORE], 'readwrite');
+    const store = transaction.objectStore(CAPTAIN_STATS_STORE);
+    const request = store.put(stats);
+
+    request.onsuccess = () => {
+      notifyChanges();
+      resolve();
+    };
+    request.onerror = () => reject('Error saving captain stats');
+  });
+};
+
+export const updateCaptainStats = async (userId: string, updates: Partial<CaptainStats>): Promise<void> => {
+  const stats = await getCaptainStats(userId);
+  if (!stats) {
+    throw new Error('Captain stats not found');
+  }
+
+  const updatedStats: CaptainStats = { ...stats, ...updates };
+  await saveCaptainStats(updatedStats);
+};
+
+export const calculateCaptainRank = (rankPoints: number): CaptainRank => {
+  if (rankPoints >= 1000) return 'Master Captain';
+  if (rankPoints >= 600) return 'Elite Captain';
+  if (rankPoints >= 300) return 'Gold Captain';
+  if (rankPoints >= 100) return 'Silver Captain';
+  return 'Bronze Captain';
+};
+
+export const awardRankPoints = async (userId: string, points: number, reason: string): Promise<void> => {
+  const stats = await getCaptainStats(userId);
+  if (!stats) {
+    throw new Error('Captain stats not found');
+  }
+
+  const newPoints = stats.rankPoints + points;
+  const newRank = calculateCaptainRank(newPoints);
+  const rankChanged = newRank !== stats.rank;
+
+  await updateCaptainStats(userId, {
+    rankPoints: newPoints,
+    rank: newRank
+  });
+
+  if (rankChanged) {
+    const notification: Notification = {
+      id: uuidv4(),
+      userId,
+      type: 'rank_promotion',
+      title: `Promoted to ${newRank}!`,
+      message: `Congratulations! You've been promoted to ${newRank}. ${reason}`,
+      read: false,
+      createdAt: Date.now()
+    };
+    await createNotification(notification);
+  }
+};
+
+// ============================================
+// MATCH REQUESTS
+// ============================================
+
+export const createMatchRequest = async (request: MatchRequest): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([MATCH_REQUEST_STORE], 'readwrite');
+    const store = transaction.objectStore(MATCH_REQUEST_STORE);
+    const addRequest = store.add(request);
+
+    addRequest.onsuccess = () => {
+      notifyChanges();
+      resolve();
+    };
+    addRequest.onerror = () => reject('Error creating match request');
+  });
+};
+
+export const getPendingMatchRequests = async (): Promise<MatchRequest[]> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([MATCH_REQUEST_STORE], 'readonly');
+    const store = transaction.objectStore(MATCH_REQUEST_STORE);
+    const index = store.index('status');
+    const request = index.getAll('pending');
+
+    request.onsuccess = () => {
+      const requests = request.result as MatchRequest[];
+      requests.sort((a, b) => b.createdAt - a.createdAt);
+      resolve(requests);
+    };
+    request.onerror = () => reject('Error fetching pending match requests');
+  });
+};
+
+export const approveMatchRequest = async (requestId: string, adminId: string): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([MATCH_REQUEST_STORE], 'readwrite');
+    const store = transaction.objectStore(MATCH_REQUEST_STORE);
+    const getRequest = store.get(requestId);
+
+    getRequest.onsuccess = () => {
+      const matchRequest = getRequest.result as MatchRequest;
+      if (matchRequest) {
+        matchRequest.status = 'approved';
+        matchRequest.reviewedBy = adminId;
+        matchRequest.reviewedAt = Date.now();
+
+        const putRequest = store.put(matchRequest);
+        putRequest.onsuccess = () => {
+          notifyChanges();
+          resolve();
+        };
+        putRequest.onerror = () => reject('Error approving match request');
+      } else {
+        reject('Match request not found');
+      }
+    };
+    getRequest.onerror = () => reject('Error fetching match request');
+  });
+};
+
+export const rejectMatchRequest = async (requestId: string, adminId: string, reason: string): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([MATCH_REQUEST_STORE], 'readwrite');
+    const store = transaction.objectStore(MATCH_REQUEST_STORE);
+    const getRequest = store.get(requestId);
+
+    getRequest.onsuccess = () => {
+      const matchRequest = getRequest.result as MatchRequest;
+      if (matchRequest) {
+        matchRequest.status = 'rejected';
+        matchRequest.reviewedBy = adminId;
+        matchRequest.reviewedAt = Date.now();
+        matchRequest.rejectionReason = reason;
+
+        const putRequest = store.put(matchRequest);
+        putRequest.onsuccess = () => {
+          notifyChanges();
+          resolve();
+        };
+        putRequest.onerror = () => reject('Error rejecting match request');
+      } else {
+        reject('Match request not found');
+      }
+    };
+    getRequest.onerror = () => reject('Error fetching match request');
   });
 };

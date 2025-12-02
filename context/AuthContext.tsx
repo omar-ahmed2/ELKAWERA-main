@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole, Team } from '../types';
-import { loginUser, registerUser, registerCaptain, updateUser } from '../utils/db';
+import { User, UserRole } from '../types';
+import { loginUser, registerUser, updateUser } from '../utils/db';
 import { isAdminAccount, getAdminName } from '../utils/adminAccounts';
 
 interface AuthContextType {
@@ -8,7 +9,6 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, age?: number, height?: number, weight?: number, strongFoot?: 'Left' | 'Right', position?: string, role?: UserRole) => Promise<User>;
-  signUpCaptain: (name: string, email: string, password: string, age: number, teamName: string, teamAbbr: string, teamLogo?: string) => Promise<{ user: User; team: Team }>;
   updateProfile: (name: string, profileImageUrl?: string, role?: UserRole) => Promise<void>;
   signOut: () => void;
 }
@@ -84,26 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUpCaptain = async (
-    name: string,
-    email: string,
-    password: string,
-    age: number,
-    teamName: string,
-    teamAbbr: string,
-    teamLogo?: string
-  ) => {
-    setLoading(true);
-    try {
-      const { user: newCaptain, team } = await registerCaptain(name, email, password, age, teamName, teamAbbr, teamLogo);
-      setUser(newCaptain);
-      localStorage.setItem('elkawera_user', JSON.stringify(newCaptain));
-      return { user: newCaptain, team };
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const updateProfile = async (name: string, profileImageUrl?: string, role?: UserRole) => {
     if (!user) return;
     setLoading(true);
@@ -111,13 +91,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // If profileImageUrl is provided, use it. If it's explicitly null (cleared), use undefined. 
       // If it's undefined (not passed), keep the existing one.
       const newImage = profileImageUrl !== undefined ? profileImageUrl : user.profileImageUrl;
-      const newRole = role !== undefined ? role : user.role;
+
+      // Role changes are IGNORED - only admins can change roles via admin panel
+      // This enforces role immutability for regular users
 
       const updatedUser: User = {
         ...user,
         name,
         profileImageUrl: newImage,
-        role: newRole
+        // Keep existing role - no changes allowed from profile
+        role: user.role
       };
 
       await updateUser(updatedUser);
@@ -134,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signUpCaptain, updateProfile, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, updateProfile, signOut }}>
       {children}
     </AuthContext.Provider>
   );

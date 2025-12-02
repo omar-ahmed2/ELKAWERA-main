@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getAllPlayers, getAllTeams, getPlayerById } from '../utils/db';
-import { User, Shield, Users, Save, Calendar, Mail, Camera, Upload, RotateCcw } from 'lucide-react';
-import { Player } from '../types';
+import { getAllPlayers, getAllTeams, getPlayerById, getTeamInvitations, updateInvitationStatus, savePlayer } from '../utils/db';
+import { User, Shield, Users, Save, Calendar, Mail, Camera, Upload, RotateCcw, CheckCircle, XCircle } from 'lucide-react';
+import { Player, TeamInvitation } from '../types';
 import { PlayerCard } from '../components/PlayerCard';
 
 export const Profile: React.FC = () => {
@@ -16,6 +16,8 @@ export const Profile: React.FC = () => {
    const [playerCard, setPlayerCard] = useState<Player | undefined>(undefined);
    const [isFlipped, setIsFlipped] = useState(false);
    const fileInputRef = useRef<HTMLInputElement>(null);
+   const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
+   const [processingInvite, setProcessingInvite] = useState<string | null>(null);
 
    useEffect(() => {
       const fetchData = async () => {
@@ -28,6 +30,15 @@ export const Profile: React.FC = () => {
                if (card) setPlayerCard(card);
             } catch (error) {
                console.error("Error fetching player card:", error);
+            }
+         }
+
+         if (user) {
+            try {
+               const userInvitations = await getTeamInvitations(user.id);
+               setInvitations(userInvitations.filter(inv => inv.status === 'pending'));
+            } catch (error) {
+               console.error("Error fetching invitations:", error);
             }
          }
       };
@@ -58,6 +69,29 @@ export const Profile: React.FC = () => {
       await updateProfile(name, imagePreview);
       setLoading(false);
       setIsEditing(false);
+   };
+
+   const handleInviteResponse = async (invitationId: string, status: 'accepted' | 'rejected') => {
+      setProcessingInvite(invitationId);
+      try {
+         await updateInvitationStatus(invitationId, status);
+         // Remove from list
+         setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+
+         if (status === 'accepted') {
+            alert('Invitation accepted! You have joined the team.');
+            // Refresh player card to show new team
+            if (user?.playerCardId) {
+               const card = await getPlayerById(user.playerCardId);
+               if (card) setPlayerCard(card);
+            }
+         }
+      } catch (error) {
+         console.error('Error updating invitation:', error);
+         alert('Failed to update invitation status');
+      } finally {
+         setProcessingInvite(null);
+      }
    };
 
    if (!user) return null;
@@ -144,6 +178,45 @@ export const Profile: React.FC = () => {
             {/* Settings & Stats */}
             <div className="md:col-span-2 space-y-6">
 
+               {/* Team Invitations */}
+               {invitations.length > 0 && (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                     <div className="absolute top-0 left-0 w-1 h-full bg-elkawera-accent"></div>
+                     <h3 className="text-lg font-bold uppercase mb-4 flex items-center gap-2">
+                        <Mail size={20} className="text-elkawera-accent" />
+                        Team Invitations
+                     </h3>
+                     <div className="space-y-3">
+                        {invitations.map(invitation => (
+                           <div key={invitation.id} className="bg-black/30 rounded-xl p-4 flex items-center justify-between border border-white/5">
+                              <div>
+                                 <p className="font-bold text-white">{invitation.teamName}</p>
+                                 <p className="text-sm text-gray-400">Invited by {invitation.captainName}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                 <button
+                                    onClick={() => handleInviteResponse(invitation.id, 'accepted')}
+                                    disabled={processingInvite === invitation.id}
+                                    className="p-2 bg-elkawera-accent/20 text-elkawera-accent rounded-lg hover:bg-elkawera-accent hover:text-black transition-colors disabled:opacity-50"
+                                    title="Accept"
+                                 >
+                                    <CheckCircle size={20} />
+                                 </button>
+                                 <button
+                                    onClick={() => handleInviteResponse(invitation.id, 'rejected')}
+                                    disabled={processingInvite === invitation.id}
+                                    className="p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
+                                    title="Decline"
+                                 >
+                                    <XCircle size={20} />
+                                 </button>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+               )}
+
                {/* Stats Grid */}
                <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/5 border border-white/10 p-6 rounded-2xl flex items-center gap-4">
@@ -206,27 +279,16 @@ export const Profile: React.FC = () => {
                         <p className="text-[10px] text-gray-600 mt-2 ml-1">* Email cannot be changed.</p>
                      </div>
 
-                     {/* Role Switcher (For Testing/Demo) */}
+                     {/* Role Display (Read-Only) */}
                      <div className="pt-4 border-t border-white/10">
-                        <label className="flex items-center gap-2 text-xs uppercase text-elkawera-accent mb-2 font-bold tracking-wider">
-                           <Shield size={14} /> Role (Debug/Test)
+                        <label className="flex items-center gap-2 text-xs uppercase text-gray-400 mb-2 font-bold tracking-wider">
+                           <Shield size={14} /> Account Role
                         </label>
-                        <select
-                           value={user.role}
-                           onChange={(e) => {
-                              if (window.confirm(`Switch role to ${e.target.value}? Page will reload.`)) {
-                                 updateProfile(user.name, undefined, e.target.value as any);
-                                 setTimeout(() => window.location.reload(), 500);
-                              }
-                           }}
-                           className="w-full bg-black/50 border border-elkawera-accent/30 rounded-xl p-3 text-white focus:outline-none focus:border-elkawera-accent"
-                        >
-                           <option value="player">Player</option>
-                           <option value="captain">Captain</option>
-                           <option value="admin">Admin</option>
-                        </select>
-                        <p className="text-[10px] text-gray-500 mt-2 ml-1">
-                           * Use this to switch roles and test different features (Captain Dashboard, Admin Matches, etc.)
+                        <div className="w-full bg-black/30 border border-white/5 rounded-xl p-4 text-gray-300 cursor-not-allowed capitalize">
+                           {user.role}
+                        </div>
+                        <p className="text-[10px] text-gray-600 mt-2 ml-1">
+                           * Only administrators can change user roles.
                         </p>
                      </div>
 

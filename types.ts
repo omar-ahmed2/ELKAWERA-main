@@ -21,15 +21,55 @@ export interface PhysicalStats {
 
 export type UserRole = 'admin' | 'player' | 'captain';
 
+// Captain Rank System
+export type CaptainRank = 'Bronze Captain' | 'Silver Captain' | 'Gold Captain' | 'Elite Captain' | 'Master Captain';
+
+export interface CaptainStats {
+  userId: string;
+  matchesManaged: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  playersRecruited: number;
+  verifiedMatches: number;
+  rank: CaptainRank;
+  rankPoints: number;
+  createdAt: number;
+}
+
+// Enhanced Notification System
+export type NotificationType =
+  | 'team_invitation'
+  | 'match_request'
+  | 'match_approved'
+  | 'match_rejected'
+  | 'match_result'
+  | 'card_approved'
+  | 'card_rejected'
+  | 'card_deleted'
+  | 'rank_promotion'
+  | 'player_joined'
+  | 'invitation_accepted'
+  | 'invitation_rejected';
+
 export interface Notification {
   id: string;
-  type: 'card_rejected' | 'card_deleted' | 'team_invitation' | 'match_scheduled' | 'match_result';
+  userId: string;
+  type: NotificationType;
+  title: string;
   message: string;
-  timestamp: number;
-  read: boolean;
-  relatedId?: string; // ID of the invitation, match, etc.
-  senderName?: string;
   actionUrl?: string;
+  metadata?: {
+    teamId?: string;
+    matchId?: string;
+    invitationId?: string;
+    captainName?: string;
+    teamName?: string;
+    playerName?: string;
+    playerId?: string;
+  };
+  read: boolean;
+  createdAt: number;
 }
 
 export interface User {
@@ -71,9 +111,14 @@ export interface Team {
   shortName: string;
   color: string;
   logoUrl?: string;
-  captainId?: string; // User ID of the team captain
-  experiencePoints?: number; // XP from external matches
-  ranking?: number; // Team strength ranking
+  captainId: string;
+  captainName: string;
+  experiencePoints: number;
+  ranking: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  totalMatches: number;
   createdAt: number;
 }
 
@@ -209,3 +254,25 @@ export interface MatchDispute {
   createdAt: number;
   resolvedAt?: number;
 }
+
+// ============================================
+// MATCH APPROVAL WORKFLOW
+// ============================================
+
+export interface MatchRequest {
+  id: string;
+  matchId: string;
+  requestedBy: string; // Captain user ID
+  requestedByName: string; // Captain name for display
+  homeTeamId: string;
+  homeTeamName: string;
+  awayTeamId: string;
+  awayTeamName: string;
+  proposedDate?: number;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy?: string; // Admin user ID
+  reviewedAt?: number;
+  rejectionReason?: string;
+  createdAt: number;
+}
+

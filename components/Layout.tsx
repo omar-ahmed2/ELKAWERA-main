@@ -3,12 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, User as UserIcon, Settings, ChevronDown, BarChart2, Gamepad2, User, Bell, Trophy, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getAllPlayerRegistrationRequests, subscribeToChanges } from '../utils/db';
+import { getAllPlayerRegistrationRequests, subscribeToChanges, getUnreadCount } from '../utils/db';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const location = useLocation();
@@ -24,21 +25,25 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     navigate('/');
   };
 
-  // Fetch pending requests count for admins
+  // Fetch pending requests count for admins and unread notifications
   useEffect(() => {
-    const loadPendingCount = async () => {
+    const loadCounts = async () => {
       if (user && user.role === 'admin') {
         const requests = await getAllPlayerRegistrationRequests();
         const pending = requests.filter(r => r.status === 'pending');
         setPendingRequestsCount(pending.length);
       }
+      if (user) {
+        const count = await getUnreadCount(user.id);
+        setUnreadNotifications(count);
+      }
     };
 
-    loadPendingCount();
+    loadCounts();
 
     // Subscribe to real-time updates
     const unsubscribe = subscribeToChanges(() => {
-      loadPendingCount();
+      loadCounts();
     });
 
     return () => unsubscribe();
@@ -93,6 +98,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                       </Link>
                     )}
                     <Link to="/teams" className={`${isActive('/teams')} px-4 py-2 rounded-full text-sm font-bold transition-all duration-300`}>Teams</Link>
+
+                    {/* Notifications Bell */}
+                    <Link to="/notifications" className={`${isActive('/notifications')} px-3 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-1 relative`}>
+                      <Bell size={18} />
+                      {unreadNotifications > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg">
+                          {unreadNotifications}
+                        </span>
+                      )}
+                    </Link>
+
                     {user.role === 'captain' && (
                       <Link to="/captain/dashboard" className={`${isActive('/captain/dashboard')} px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-1`}>
                         <Shield size={14} /> Captain

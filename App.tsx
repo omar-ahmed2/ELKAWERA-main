@@ -19,6 +19,8 @@ import { EndMatch } from './pages/EndMatch';
 import { PlayerEvaluationPage } from './pages/PlayerEvaluationPage';
 import { CaptainDashboard } from './pages/CaptainDashboard';
 import { ExternalMatchScheduler } from './pages/ExternalMatchScheduler';
+import { Notifications } from './pages/Notifications';
+import { CaptainSignUp } from './pages/CaptainSignUp';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -31,6 +33,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/signup/captain" element={<CaptainSignUp />} />
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
@@ -41,6 +44,7 @@ const App: React.FC = () => {
               <Route path="/match-sim" element={<MatchSim />} />
               <Route path="/compare" element={<Compare />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/new-players" element={<NewPlayers />} />
               <Route path="/request-card" element={<RequestCard />} />
 
