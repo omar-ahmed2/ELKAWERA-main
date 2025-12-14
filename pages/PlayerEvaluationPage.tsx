@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMatchById, saveMatch, getPlayerById, savePlayer, getAllTeams, saveTeam, getCaptainStats, updateCaptainStats, awardRankPoints } from '../utils/db'; // Updated imports
+import { getMatchById, saveMatch, getPlayerById, savePlayer, getAllTeams, saveTeam, getCaptainStats, updateCaptainStats, awardRankPoints, updateTeamRankings } from '../utils/db'; // Updated imports
 import { Match, Player, Team, PlayerEvaluation, MatchEvent } from '../types';
 import { calculatePlayerOverallRating } from '../utils/matchCalculations';
 import { Trophy, ArrowLeft, Save, CheckCircle } from 'lucide-react';
@@ -206,12 +206,13 @@ export const PlayerEvaluationPage: React.FC = () => {
                 updatedHome.totalMatches = (updatedHome.totalMatches || 0) + 1;
                 if (isHomeWin) {
                     updatedHome.wins = (updatedHome.wins || 0) + 1;
-                    updatedHome.experiencePoints = (updatedHome.experiencePoints || 0) + 3;
+                    updatedHome.experiencePoints = (updatedHome.experiencePoints || 0) + 100;
                 } else if (isDraw) {
                     updatedHome.draws = (updatedHome.draws || 0) + 1;
-                    updatedHome.experiencePoints = (updatedHome.experiencePoints || 0) + 1;
+                    updatedHome.experiencePoints = (updatedHome.experiencePoints || 0) + 50;
                 } else {
                     updatedHome.losses = (updatedHome.losses || 0) + 1;
+                    updatedHome.experiencePoints = (updatedHome.experiencePoints || 0) + 25;
                 }
                 await saveTeam(updatedHome);
 
@@ -220,14 +221,18 @@ export const PlayerEvaluationPage: React.FC = () => {
                 updatedAway.totalMatches = (updatedAway.totalMatches || 0) + 1;
                 if (!isHomeWin && !isDraw) { // Away Win
                     updatedAway.wins = (updatedAway.wins || 0) + 1;
-                    updatedAway.experiencePoints = (updatedAway.experiencePoints || 0) + 3;
+                    updatedAway.experiencePoints = (updatedAway.experiencePoints || 0) + 100;
                 } else if (isDraw) {
                     updatedAway.draws = (updatedAway.draws || 0) + 1;
-                    updatedAway.experiencePoints = (updatedAway.experiencePoints || 0) + 1;
+                    updatedAway.experiencePoints = (updatedAway.experiencePoints || 0) + 50;
                 } else {
                     updatedAway.losses = (updatedAway.losses || 0) + 1;
+                    updatedAway.experiencePoints = (updatedAway.experiencePoints || 0) + 25;
                 }
                 await saveTeam(updatedAway);
+
+                // Update Rankings
+                await updateTeamRankings();
 
                 // ============================================
                 // UPDATE CAPTAIN STATS

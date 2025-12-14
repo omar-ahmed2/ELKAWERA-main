@@ -1632,3 +1632,28 @@ export const updateEventRegistrationStatus = async (eventId: string, teamId: str
     });
   }
 };
+
+export const updateTeamRankings = async (): Promise<void> => {
+  const db = await openDB();
+  const allTeams = await getAllTeams();
+
+  // Sort by XP descending
+  allTeams.sort((a, b) => (b.experiencePoints || 0) - (a.experiencePoints || 0));
+
+  const transaction = db.transaction([TEAM_STORE], 'readwrite');
+  const store = transaction.objectStore(TEAM_STORE);
+
+  for (let i = 0; i < allTeams.length; i++) {
+    const team = allTeams[i];
+    team.ranking = i + 1;
+    store.put(team);
+  }
+
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => {
+      notifyChanges();
+      resolve();
+    };
+    transaction.onerror = () => reject('Error updating team rankings');
+  });
+};

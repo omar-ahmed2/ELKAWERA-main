@@ -8,7 +8,8 @@ import {
     clearUserNotifications,
     confirmMatchRequestByOpponent,
     getTeamById,
-    subscribeToChanges
+    subscribeToChanges,
+    updateInvitationStatus
 } from '../utils/db';
 import { Notification, NotificationType } from '../types';
 import { Bell, Check, Trash2, Calendar, Shield, Info, CheckCircle, XCircle } from 'lucide-react';
@@ -76,6 +77,19 @@ export const Notifications: React.FC = () => {
         } catch (error) {
             console.error('Error handling match request:', error);
             showToast('Failed to confirm match request', 'error');
+        }
+    };
+
+    const handleInvitationAction = async (notification: Notification, action: 'accepted' | 'rejected') => {
+        if (!notification.metadata?.invitationId) return;
+
+        try {
+            await updateInvitationStatus(notification.metadata.invitationId, action);
+            showToast(`Invitation ${action}`, action === 'accepted' ? 'success' : 'info');
+            await handleMarkAsRead(notification.id);
+        } catch (error) {
+            console.error('Error handling invitation:', error);
+            showToast('Failed to update invitation', 'error');
         }
     };
 
@@ -187,10 +201,22 @@ export const Notifications: React.FC = () => {
                                     {notification.type === 'team_invitation' && !notification.read && (
                                         <div className="flex gap-3 mt-2">
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); navigate('/dashboard'); }} // Redirect to dashboard to handle invite
-                                                className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg text-sm hover:bg-blue-400 transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleInvitationAction(notification, 'accepted');
+                                                }}
+                                                className="px-4 py-2 bg-elkawera-accent text-black font-bold rounded-lg text-sm hover:bg-white transition-colors flex items-center gap-2"
                                             >
-                                                View Invitation
+                                                <CheckCircle size={14} /> Accept
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleInvitationAction(notification, 'rejected');
+                                                }}
+                                                className="px-4 py-2 bg-red-500/10 text-red-500 font-bold rounded-lg text-sm hover:bg-red-500 hover:text-white transition-colors flex items-center gap-2"
+                                            >
+                                                <XCircle size={14} /> Decline
                                             </button>
                                         </div>
                                     )}

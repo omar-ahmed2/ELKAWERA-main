@@ -25,6 +25,7 @@ import {
 import { Team, Player, TeamInvitation, CaptainStats, User, MatchRequest, Match } from '../types'; // Added MatchRequest, Match
 import { v4 as uuidv4 } from 'uuid';
 import { Users, PlusCircle, Send, Trophy, TrendingUp, Calendar, UserPlus, CheckCircle, XCircle, Upload, Shield, Award, Star, Edit3, Trash2 } from 'lucide-react';
+import { PlayerCard } from '../components/PlayerCard';
 
 export const CaptainDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -42,6 +43,7 @@ export const CaptainDashboard: React.FC = () => {
     const [showAcceptMatchModal, setShowAcceptMatchModal] = useState(false); // Added
     const [selectedRequest, setSelectedRequest] = useState<MatchRequest | null>(null); // Added
     const [captainStats, setCaptainStats] = useState<CaptainStats | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [loading, setLoading] = useState(true);
 
     // Only captains can access
@@ -298,7 +300,7 @@ export const CaptainDashboard: React.FC = () => {
                                     <Trophy size={16} />
                                     <span className="text-xs uppercase font-bold">Ranking</span>
                                 </div>
-                                <p className="text-3xl font-display font-bold text-yellow-400">#{myTeam.ranking || 'N/A'}</p>
+                                <p className="text-3xl font-display font-bold text-yellow-400">#{myTeam.ranking || 'Unranked'}</p>
                             </div>
                             <div className="bg-black/30 rounded-xl p-4 border border-white/10">
                                 <div className="flex items-center gap-2 text-gray-400 mb-2">
@@ -465,13 +467,17 @@ export const CaptainDashboard: React.FC = () => {
                         <h3 className="text-2xl font-display font-bold uppercase">Team Roster</h3>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {players.filter(p => p.teamId === myTeam.id).map(player => (
-                                <div key={player.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                                <div
+                                    key={player.id}
+                                    className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 cursor-pointer transition-all group"
+                                    onClick={() => setSelectedPlayer(player)}
+                                >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-elkawera-accent/20 flex items-center justify-center">
+                                        <div className="w-12 h-12 rounded-full bg-elkawera-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <span className="text-xl font-display font-bold">{player.overallScore}</span>
                                         </div>
                                         <div>
-                                            <p className="font-bold">{player.name}</p>
+                                            <p className="font-bold group-hover:text-elkawera-accent transition-colors">{player.name}</p>
                                             <p className="text-sm text-gray-400">{player.position}</p>
                                         </div>
                                     </div>
@@ -582,6 +588,25 @@ export const CaptainDashboard: React.FC = () => {
                     />
                 )
             }
+
+            {/* Player Preview Modal */}
+            {selectedPlayer && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelectedPlayer(null)}>
+                    <div className="transform scale-100 transition-transform" onClick={e => e.stopPropagation()}>
+                        <PlayerCard
+                            player={selectedPlayer}
+                            uniqueId={`preview-${selectedPlayer.id}`}
+                            allowFlipClick={true}
+                        />
+                        <button
+                            onClick={() => setSelectedPlayer(null)}
+                            className="absolute -top-12 right-0 text-white hover:text-elkawera-accent transition-colors"
+                        >
+                            <XCircle size={32} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };
@@ -925,6 +950,7 @@ const InvitePlayerModal: React.FC<{
             }
 
             onInvited();
+            alert('Invitations sent successfully');
         } catch (error) {
             console.error('Error sending invitations:', error);
             alert('Failed to send invitations');
