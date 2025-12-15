@@ -113,7 +113,7 @@ const translations: Record<Language, Record<string, string>> = {
         'dashboard.user_table.yes': 'Yes',
         'dashboard.user_table.no': 'No',
         // Leaderboard & Stats
-        'leaderboard.title': 'Global Leaderboard',
+        'leaderboard.title': 'Global Leadboard',
         'leaderboard.subtitle': 'Top performers and legendary clubs',
         'leaderboard.players_ranking': 'PLAYERS RANKING',
         'leaderboard.clubs_ranking': 'CLUBS RANKING',

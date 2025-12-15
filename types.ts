@@ -15,7 +15,7 @@ export interface PhysicalStats {
   acceleration: number;
 }
 
-export type UserRole = 'admin' | 'player' | 'captain';
+export type UserRole = 'admin' | 'player' | 'captain' | 'scout';
 
 // Captain Rank System
 export type CaptainRank = 'Bronze Captain' | 'Silver Captain' | 'Gold Captain' | 'Elite Captain' | 'Master Captain';
@@ -47,7 +47,9 @@ export type NotificationType =
   | 'rank_promotion'
   | 'player_joined'
   | 'invitation_accepted'
-  | 'invitation_rejected';
+  | 'invitation_rejected'
+  | 'scout_alert'
+  | 'system_announcement';
 
 export interface Notification {
   id: string;
@@ -317,4 +319,38 @@ export interface Event {
   createdByName: string;
   createdAt: number;
   updatedAt: number;
+}
+
+// ============================================
+// SCOUT SYSTEM TYPES
+// ============================================
+
+export type ScoutType = 'Independent' | 'Club';
+
+export interface ScoutProfile {
+  userId: string; // Links to User.id
+  phone?: string;
+  scoutType: ScoutType;
+  organization?: string; // Club/Academy Name or City/Region
+  totalProfilesViewed: number;
+  totalPlayersViewed: number;
+  totalTeamsViewed: number;
+  createdAt: number;
+  lastActive: number;
+}
+
+export type TrackedActionType = 'view_player' | 'view_team';
+export type TrackedEntityType = 'player' | 'team';
+
+export interface ScoutActivity {
+  id: string;
+  scoutId: string;
+  scoutName: string;
+  actionType: TrackedActionType;
+  entityId: string;
+  entityName: string;
+  entityType: TrackedEntityType;
+  timestamp: number;
+  // Optional metadata
+  userAgent?: string;
 }

@@ -28,6 +28,9 @@ import { CaptainSignUp } from './pages/CaptainSignUp';
 import { PlayerPublicProfile } from './pages/PlayerPublicProfile';
 import { MatchReporter } from './pages/MatchReporter';
 import { MatchResults } from './pages/MatchResults';
+import { ScoutSignUp } from './pages/ScoutSignUp';
+import { ScoutDashboard } from './pages/ScoutDashboard';
+import { AdminScoutControl } from './pages/AdminScoutControl';
 import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -44,6 +47,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/signup/captain" element={<CaptainSignUp />} />
+              <Route path="/signup/scout" element={<ScoutSignUp />} />
 
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
@@ -73,6 +77,12 @@ const App: React.FC = () => {
                 {/* Captain Routes */}
                 <Route path="/captain/dashboard" element={<CaptainDashboard />} />
                 <Route path="/captain/schedule-match" element={<ExternalMatchScheduler />} />
+
+                {/* Scout Routes */}
+                <Route path="/scout/dashboard" element={<ScoutDashboard />} />
+
+                {/* Admin Scout Control */}
+                <Route path="/admin/scouts" element={<AdminScoutControl />} />
               </Route>
             </Routes>
           </Layout>

@@ -70,7 +70,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isAdmin = user?.role === 'admin';
 
   return (
-    <div className={`${isAdmin ? 'h-screen overflow-hidden md:flex-row' : 'min-h-screen flex-col overflow-x-hidden'} flex font-sans bg-[var(--bg-primary)] bg-mesh bg-no-repeat bg-fixed bg-cover transition-colors duration-300`} dir={dir}>
+    <div className={`${isAdmin ? 'h-screen overflow-hidden md:flex-row' : 'min-h-screen flex-col overflow-x-hidden'} flex font-sans bg-[var(--bg-primary)] bg-mesh bg-no-repeat bg-fixed bg-cover transition-colors duration-300 text-[var(--text-primary)]`} dir={dir}>
 
       {/* Admin Sidebar - Desktop Only */}
       {isAdmin && (
@@ -108,7 +108,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
                     {user && (
                       <>
-                        {user.role !== 'captain' && (
+                        {user.role !== 'captain' && user.role !== 'scout' && (
                           <Link to="/dashboard" className={`${isActive('/dashboard')} px-3 lg:px-4 py-2 rounded-full text-sm font-bold transition-all duration-300`}>{t('nav.dashboard')}</Link>
                         )}
                         <Link to="/leaderboard" className={`${isActive('/leaderboard')} px-3 lg:px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-1`}><Trophy size={14} /> <span className="hidden lg:inline">{t('nav.leaderboard')}</span><span className="lg:hidden">Board</span></Link>
@@ -129,6 +129,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         {user.role === 'captain' && (
                           <Link to="/captain/dashboard" className={`${isActive('/captain/dashboard')} px-3 lg:px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-1`}>
                             <Shield size={14} /> <span className="hidden lg:inline">Captain</span>
+                          </Link>
+                        )}
+                        {user.role === 'scout' && (
+                          <Link to="/scout/dashboard" className={`${isActive('/scout/dashboard')} px-3 lg:px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-1`}>
+                            <Shield size={14} /> <span className="hidden lg:inline">Scout</span>
                           </Link>
                         )}
                       </>
@@ -159,10 +164,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
                       {/* Profile Dropdown */}
                       {profileDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-56 bg-elkawera-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 z-50">
-                          <div className="p-4 border-b border-white/10">
-                            <p className="text-sm font-bold text-white truncate">{user.name}</p>
-                            <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                        <div className="absolute right-0 mt-2 w-56 bg-[var(--bg-primary)]/95 backdrop-blur-xl border border-[var(--border-color)] rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 z-50">
+                          <div className="p-4 border-b border-[var(--border-color)]">
+                            <p className="text-sm font-bold text-[var(--text-primary)] truncate">{user.name}</p>
+                            <p className="text-xs text-[var(--text-secondary)] truncate">{user.email}</p>
                             <span className="inline-block mt-2 px-2 py-1 bg-elkawera-accent/20 text-elkawera-accent text-[10px] font-bold uppercase rounded-md">
                               {user.role}
                             </span>
@@ -261,7 +266,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
                 {user ? (
                   <>
-                    {user.role !== 'captain' && (
+                    {user.role !== 'captain' && user.role !== 'scout' && (
                       <Link to="/dashboard" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all">
                         {t('nav.dashboard')}
                       </Link>
@@ -291,6 +296,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     {user.role === 'captain' && (
                       <Link to="/captain/dashboard" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
                         <Shield size={18} /> Captain Dashboard
+                      </Link>
+                    )}
+                    {user.role === 'scout' && (
+                      <Link to="/scout/dashboard" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
+                        <Shield size={18} /> Scout Dashboard
                       </Link>
                     )}
                     {user.role === 'admin' && (
@@ -342,7 +352,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {children}
         </main>
 
-        <footer className="bg-elkawera-black border-t border-white/10 mt-auto backdrop-blur-sm">
+        <footer className="bg-[var(--bg-primary)] border-t border-[var(--border-color)] mt-auto backdrop-blur-sm">
           <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
             <p className="text-center text-gray-500 text-xs sm:text-sm font-medium">
               © {new Date().getFullYear()} ELKAWERA. The Ultimate Player Card Manager.

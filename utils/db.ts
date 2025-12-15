@@ -1,8 +1,8 @@
-import { User, Player, CardType, Position, Match, MatchStatus, MatchEvent, PlayerEvaluation, Team, TeamInvitation, MatchVerification, MatchDispute, Notification, UserRole, PlayerRegistrationRequest, CaptainStats, CaptainRank, MatchRequest, Event as AppEvent } from '../types';
+import { User, Player, CardType, Position, Match, MatchStatus, MatchEvent, PlayerEvaluation, Team, TeamInvitation, MatchVerification, MatchDispute, Notification, UserRole, PlayerRegistrationRequest, CaptainStats, CaptainRank, MatchRequest, Event as AppEvent, ScoutProfile, ScoutActivity } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 const DB_NAME = 'ElkaweraDB';
-const DB_VERSION = 12; // Bumped to force event store creation
+const DB_VERSION = 13; // Bumped for Scout system
 const PLAYER_STORE = 'players';
 const TEAM_STORE = 'teams';
 const USER_STORE = 'users';
@@ -15,6 +15,8 @@ const NOTIFICATION_STORE = 'notifications';
 const CAPTAIN_STATS_STORE = 'captain_stats';
 const MATCH_REQUEST_STORE = 'match_requests';
 const EVENT_STORE = 'events';
+const SCOUT_PROFILE_STORE = 'scout_profiles';
+const SCOUT_ACTIVITY_STORE = 'scout_activity';
 
 // Broadcast Channel for Real-time Sync
 const syncChannel = new BroadcastChannel('elkawera_sync');
@@ -173,6 +175,22 @@ export const openDB = (): Promise<IDBDatabase> => {
             eventStore.createIndex('status', 'status', { unique: false });
             eventStore.createIndex('date', 'date', { unique: false });
             eventStore.createIndex('category', 'category', { unique: false });
+          }
+
+          // Scout Profiles Store (v13)
+          if (!db.objectStoreNames.contains(SCOUT_PROFILE_STORE)) {
+            console.log('Creating scout profiles store...');
+            const scoutProfileStore = db.createObjectStore(SCOUT_PROFILE_STORE, { keyPath: 'userId' });
+            scoutProfileStore.createIndex('scoutType', 'scoutType', { unique: false });
+          }
+
+          // Scout Activity Store (v13)
+          if (!db.objectStoreNames.contains(SCOUT_ACTIVITY_STORE)) {
+            console.log('Creating scout activity store...');
+            const scoutActivityStore = db.createObjectStore(SCOUT_ACTIVITY_STORE, { keyPath: 'id' });
+            scoutActivityStore.createIndex('scoutId', 'scoutId', { unique: false });
+            scoutActivityStore.createIndex('entityId', 'entityId', { unique: false });
+            scoutActivityStore.createIndex('timestamp', 'timestamp', { unique: false });
           }
 
           console.log('Database upgrade completed successfully');
@@ -1656,4 +1674,189 @@ export const updateTeamRankings = async (): Promise<void> => {
     };
     transaction.onerror = () => reject('Error updating team rankings');
   });
+};
+
+// ============================================
+// SCOUT SYSTEM FUNCTIONS
+// ============================================
+
+export const saveScoutProfile = async (profile: ScoutProfile): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([SCOUT_PROFILE_STORE], 'readwrite');
+    const store = transaction.objectStore(SCOUT_PROFILE_STORE);
+    const request = store.put(profile);
+
+    request.onsuccess = () => {
+      notifyChanges();
+      resolve();
+    };
+    request.onerror = () => reject('Error saving scout profile');
+  });
+};
+
+export const getScoutProfile = async (userId: string): Promise<ScoutProfile | undefined> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([SCOUT_PROFILE_STORE], 'readonly');
+    const store = transaction.objectStore(SCOUT_PROFILE_STORE);
+    const request = store.get(userId);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject('Error fetching scout profile');
+  });
+};
+
+export const trackScoutActivity = async (
+  scoutId: string,
+  scoutName: string,
+  actionType: 'view_player' | 'view_team',
+  entityId: string,
+  entityName: string,
+  entityType: 'player' | 'team'
+): Promise<void> => {
+  const db = await openDB();
+
+  // 1. Save Activity Log
+  const activity: ScoutActivity = {
+    id: uuidv4(),
+    scoutId,
+    scoutName,
+    actionType,
+    entityId,
+    entityName,
+    entityType,
+    timestamp: Date.now(),
+    userAgent: navigator.userAgent
+  };
+
+  const activityPromise = new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([SCOUT_ACTIVITY_STORE], 'readwrite');
+    const store = transaction.objectStore(SCOUT_ACTIVITY_STORE);
+    const request = store.put(activity);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject('Error saving scout activity');
+  });
+
+  // 2. Update Scout Profile Stats
+  const profilePromise = getScoutProfile(scoutId).then(async (profile) => {
+    if (profile) {
+      const updatedProfile: ScoutProfile = {
+        ...profile,
+        lastActive: Date.now(),
+        totalProfilesViewed: profile.totalProfilesViewed + 1,
+        totalPlayersViewed: actionType === 'view_player' ? profile.totalPlayersViewed + 1 : profile.totalPlayersViewed,
+        totalTeamsViewed: actionType === 'view_team' ? profile.totalTeamsViewed + 1 : profile.totalTeamsViewed
+      };
+      await saveScoutProfile(updatedProfile);
+    }
+  });
+
+  // 3. Notify Admins
+  const notifyAdminsPromise = getAllUsers().then(async (users) => {
+    const admins = users.filter(u => u.role === 'admin');
+    // Using 'match_request' as a generic placeholder type that is allowed
+    // Ideally we add a new type 'scout_alert' to types.ts but I want to avoid massive refactors for now.
+    // I'll cast to 'any' to avoid TS error on 'type'.
+
+    for (const admin of admins) {
+      const notification: Notification = {
+        id: uuidv4(),
+        userId: admin.id,
+        type: 'scout_alert',
+        title: `Scout Activity Alert`,
+        message: `Scout ${scoutName} is viewing ${entityType}: ${entityName}`,
+        read: false,
+        createdAt: Date.now()
+      };
+      await addNotificationToUser(admin.id, notification);
+    }
+  });
+
+  await Promise.all([activityPromise, profilePromise, notifyAdminsPromise]);
+  notifyChanges();
+};
+
+export const getAllScoutProfiles = async (): Promise<ScoutProfile[]> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([SCOUT_PROFILE_STORE], 'readonly');
+    const store = transaction.objectStore(SCOUT_PROFILE_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject('Error fetching scout profiles');
+  });
+};
+
+export const getScoutActivity = async (scoutId: string): Promise<ScoutActivity[]> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([SCOUT_ACTIVITY_STORE], 'readonly');
+    const store = transaction.objectStore(SCOUT_ACTIVITY_STORE);
+    const index = store.index('scoutId');
+    const request = index.getAll(scoutId);
+
+    request.onsuccess = () => {
+      // Sort by timestamp desc
+      const results = request.result as ScoutActivity[];
+      results.sort((a, b) => b.timestamp - a.timestamp);
+      resolve(results);
+    };
+    request.onerror = () => reject('Error fetching scout activity');
+  });
+};
+
+export const getAllScoutActivity = async (): Promise<ScoutActivity[]> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([SCOUT_ACTIVITY_STORE], 'readonly');
+    const store = transaction.objectStore(SCOUT_ACTIVITY_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject('Error fetching scout activity');
+  });
+};
+
+export const registerScout = async (
+  name: string,
+  email: string,
+  phone: string,
+  password: string,
+  scoutType: 'Independent' | 'Club',
+  organization?: string
+): Promise<User> => {
+  // 1. Register User
+  const user = await registerUser(name, email, password, undefined, undefined, undefined, undefined, undefined, 'scout');
+
+  // 2. Create Scout Profile
+  const profile: ScoutProfile = {
+    userId: user.id,
+    phone,
+    scoutType,
+    organization,
+    totalProfilesViewed: 0,
+    totalPlayersViewed: 0,
+    totalTeamsViewed: 0,
+    createdAt: Date.now(),
+    lastActive: Date.now()
+  };
+
+  await saveScoutProfile(profile);
+
+  // 3. Notify Admins
+  const allUsers = await getAllUsers();
+  const admins = allUsers.filter(u => u.role === 'admin');
+  for (const admin of admins) {
+    await addNotificationToUser(admin.id, {
+      id: uuidv4(),
+      userId: admin.id,
+      type: 'scout_alert',
+      title: 'New Scout Registration',
+      message: `A new scout has joined: ${name} (${scoutType}${organization ? ` - ${organization}` : ''})`,
+      read: false,
+      createdAt: Date.now()
+    });
+  }
+
+  return user;
 };

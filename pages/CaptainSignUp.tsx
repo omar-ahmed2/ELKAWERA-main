@@ -253,6 +253,9 @@ export const CaptainSignUp: React.FC = () => {
                 <div className="mt-4 text-center text-sm text-gray-400">
                     Want to join as a player? <Link to="/signup" className="text-elkawera-accent hover:underline font-bold">Player Sign-Up</Link>
                 </div>
+                <div className="mt-2 text-center text-sm text-gray-400">
+                    Are you a scout? <Link to="/signup/scout" className="text-elkawera-accent hover:underline font-bold">Scout Sign-Up</Link>
+                </div>
             </div>
         </div>
     );

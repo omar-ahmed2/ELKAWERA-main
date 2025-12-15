@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getPlayerById, getAllMatches, getAllTeams } from '../utils/db';
+import { getPlayerById, getAllMatches, getAllTeams, trackScoutActivity } from '../utils/db';
 import { Player, Match, Team } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { PlayerCard } from '../components/PlayerCard';
 import { PlayerStatistics } from '../components/PlayerStatistics';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
@@ -9,6 +10,7 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 export const PlayerPublicProfile: React.FC = () => {
     const { playerId } = useParams<{ playerId: string }>();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [player, setPlayer] = useState<Player | null>(null);
     const [matches, setMatches] = useState<Match[]>([]);
     const [teams, setTeams] = useState<Team[]>([]);
@@ -44,6 +46,12 @@ export const PlayerPublicProfile: React.FC = () => {
         };
         loadData();
     }, [playerId, navigate]);
+
+    useEffect(() => {
+        if (player && user?.role === 'scout') {
+            trackScoutActivity(user.id, user.name, 'view_player', player.id, player.name, 'player').catch(console.error);
+        }
+    }, [player, user]);
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center text-white">Loading Analysis...</div>;

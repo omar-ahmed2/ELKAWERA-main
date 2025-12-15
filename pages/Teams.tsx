@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Team, Player } from '../types';
-import { getAllTeams, saveTeam, deleteTeam, getPlayersByTeamId, removePlayerFromTeam } from '../utils/db';
+import { getAllTeams, saveTeam, deleteTeam, getPlayersByTeamId, removePlayerFromTeam, trackScoutActivity } from '../utils/db';
 import { PlusCircle, Trash2, Users, Shield, Upload, Edit3, ArrowLeft, Save, X, UserPlus, AlertTriangle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Link } from 'react-router-dom';
@@ -40,6 +40,12 @@ export const Teams: React.FC = () => {
       setFormData(selectedTeam); // Pre-fill form for editing
     }
   }, [selectedTeam]);
+
+  useEffect(() => {
+    if (selectedTeam && user?.role === 'scout') {
+      trackScoutActivity(user.id, user.name, 'view_team', selectedTeam.id, selectedTeam.name, 'team').catch(console.error);
+    }
+  }, [selectedTeam, user]);
 
   const loadTeams = () => {
     getAllTeams().then(setTeams);

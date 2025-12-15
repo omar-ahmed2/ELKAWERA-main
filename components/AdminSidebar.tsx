@@ -34,7 +34,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ pendingRequestsCount
 
     const isActive = (path: string) => location.pathname === path
         ? "bg-elkawera-accent text-elkawera-black shadow-[0_0_15px_rgba(0,255,157,0.3)]"
-        : "text-gray-400 hover:text-white hover:bg-white/5";
+        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)]/10";
 
     const handleSignOut = () => {
         signOut();
@@ -66,10 +66,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ pendingRequestsCount
 
     return (
         <aside
-            className={`hidden md:flex flex-col h-screen sticky top-0 bg-elkawera-black/95 backdrop-blur-xl border-r border-white/10 transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}
+            className={`hidden md:flex flex-col h-screen sticky top-0 bg-[var(--bg-primary)]/95 backdrop-blur-xl border-r border-[var(--border-color)] transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}
         >
             {/* Logo Section */}
-            <div className="p-4 flex items-center justify-between border-b border-white/10">
+            <div className="p-4 flex items-center justify-between border-b border-[var(--border-color)]">
                 <div
                     className={`flex items-center gap-3 cursor-pointer overflow-hidden transition-all duration-300 ${collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}
                     onClick={() => navigate('/')}
@@ -77,7 +77,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ pendingRequestsCount
                     <div className="relative w-8 h-8 rounded-full shadow-lg flex items-center justify-center flex-shrink-0">
                         <img src="/elkawera.jpg" alt="Logo" className="w-full h-full object-contain rounded-full" />
                     </div>
-                    <span className="text-xl font-display font-bold italic tracking-tighter text-white truncate">
+                    <span className="text-xl font-display font-bold italic tracking-tighter text-[var(--text-primary)] truncate">
                         ELKAWERA<span className="text-elkawera-accent">.</span>
                     </span>
                 </div>
@@ -103,10 +103,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ pendingRequestsCount
                 <NavItem to="/teams" icon={Users} label="Teams" />
 
                 {/* Admin Section */}
-                {!collapsed && <p className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 mt-6">Admin</p>}
-                {!collapsed && collapsed && <div className="h-px bg-white/10 my-4 mx-2"></div>}
+                {!collapsed && <p className="px-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2 mt-6">Admin</p>}
+                {!collapsed && collapsed && <div className="h-px bg-[var(--border-color)] my-4 mx-2"></div>}
 
                 <NavItem to="/admin/matches" icon={Target} label="Matches" />
+                <NavItem to="/admin/scouts" icon={Shield} label="Scouts" />
                 <NavItem to="/compare" icon={BarChart2} label="Compare" />
                 <NavItem to="/create" icon={Plus} label="New Card" />
 
@@ -119,7 +120,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ pendingRequestsCount
             </div>
 
             {/* User Section */}
-            <div className="p-3 border-t border-white/10">
+            <div className="p-3 border-t border-[var(--border-color)]">
                 <NavItem to="/profile" icon={User} label="Profile" />
                 <NavItem to="/settings" icon={Settings} label="Settings" />
 

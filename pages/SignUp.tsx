@@ -206,6 +206,9 @@ export const SignUp: React.FC = () => {
                 <div className="mt-4 text-center text-sm text-gray-400">
                     Want to create a team? <Link to="/signup/captain" className="text-elkawera-accent hover:underline font-bold">Captain Sign-Up</Link>
                 </div>
+                <div className="mt-2 text-center text-sm text-gray-400">
+                    Are you a scout? <Link to="/signup/scout" className="text-elkawera-accent hover:underline font-bold">Scout Sign-Up</Link>
+                </div>
                 <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xs text-blue-300 text-center">
                     Your registration will be sent to admins. They will create your player card.
                 </div>

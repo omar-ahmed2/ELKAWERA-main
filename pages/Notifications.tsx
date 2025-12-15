@@ -103,6 +103,7 @@ export const Notifications: React.FC = () => {
     const getIcon = (type: NotificationType) => {
         if (type.includes('match')) return <Calendar className="text-elkawera-accent" />;
         if (type.includes('invitation') || type.includes('team')) return <Shield className="text-blue-400" />;
+        if (type === 'scout_alert' || type === 'system_announcement') return <Shield className="text-elkawera-accent" />;
         if (type.includes('card')) return <Info className="text-yellow-400" />;
         return <Bell className="text-gray-400" />;
     };
