@@ -1,5 +1,6 @@
 import { User, Player, CardType, Position, Match, MatchStatus, MatchEvent, PlayerEvaluation, Team, TeamInvitation, MatchVerification, MatchDispute, Notification, UserRole, PlayerRegistrationRequest, CaptainStats, CaptainRank, MatchRequest, Event as AppEvent, ScoutProfile, ScoutActivity } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { getCardTypeFromScore } from './matchCalculations';
 
 const DB_NAME = 'ElkaweraDB';
 const DB_VERSION = 20; // Bumped for Scout system
@@ -390,6 +391,9 @@ export const clearUserNotifications = async (userId: string): Promise<void> => {
 
 export const savePlayer = async (player: Player): Promise<void> => {
   try {
+    // Automatically update cardType based on overallScore before saving
+    player.cardType = getCardTypeFromScore(player.overallScore);
+
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYER_STORE], 'readwrite');

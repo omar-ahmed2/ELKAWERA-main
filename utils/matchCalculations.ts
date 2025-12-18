@@ -31,6 +31,7 @@ export function calculatePlayerOverallRating(
     if (evaluation.defensiveContributions > 0) adjustment += evaluation.defensiveContributions * 0.2;
     if (evaluation.cleanSheets) adjustment += 1;
     if (evaluation.penaltySaves > 0) adjustment += evaluation.penaltySaves * 0.8;
+    if (evaluation.saves > 0) adjustment += evaluation.saves * 0.1;
 
     // Cap the adjustment to prevent massive jumps
     adjustment = Math.min(adjustment, 3);
@@ -38,6 +39,26 @@ export function calculatePlayerOverallRating(
     const newRating = Math.min(99, Math.max(40, baseRating + adjustment));
 
     return Math.round(newRating);
+}
+
+/**
+ * Determine card type based on overall rating
+ * 
+ * 60 - 69 -> Silver
+ * 70 - 79 -> Gold
+ * 80 - 89 -> Elite
+ * 90 and above -> Platinum
+ * 
+ * @param score - The overall score
+ * @returns CardType
+ */
+import { CardType } from '../types';
+
+export function getCardTypeFromScore(score: number): CardType {
+    if (score >= 90) return 'Platinum';
+    if (score >= 80) return 'Elite';
+    if (score >= 70) return 'Gold';
+    return 'Silver';
 }
 
 /**
@@ -158,10 +179,11 @@ export function validatePlayerEvaluation(
     if (evaluation.assists < 0) errors.push('Assists cannot be negative');
     if (evaluation.defensiveContributions < 0) errors.push('Defensive contributions cannot be negative');
     if (evaluation.penaltySaves < 0) errors.push('Penalty saves cannot be negative');
+    if (evaluation.saves < 0) errors.push('Saves cannot be negative');
 
     // Position-specific validation
-    if (playerPosition !== 'GK' && evaluation.penaltySaves > 0) {
-        errors.push('Only goalkeepers can have penalty saves');
+    if (playerPosition !== 'GK' && (evaluation.penaltySaves > 0 || evaluation.saves > 0)) {
+        errors.push('Only goalkeepers can have saves');
     }
 
     // Reasonable limits
@@ -169,6 +191,7 @@ export function validatePlayerEvaluation(
     if (evaluation.assists > 10) errors.push('Assists seem unreasonably high (max 10 per match)');
     if (evaluation.defensiveContributions > 20) errors.push('Defensive contributions seem unreasonably high (max 20 per match)');
     if (evaluation.penaltySaves > 5) errors.push('Penalty saves seem unreasonably high (max 5 per match)');
+    if (evaluation.saves > 20) errors.push('Saves seem unreasonably high (max 20 per match)');
 
     return errors;
 }

@@ -21,22 +21,7 @@ const StatInput = ({ label, value, onChange }: { label: string, value: number, o
   </div>
 );
 
-const StatSlider = ({ label, value, onChange }: { label: string, value: number, onChange: (val: number) => void }) => (
-  <div className="mb-4">
-    <div className="flex justify-between mb-1">
-      <label className="text-sm uppercase font-bold text-gray-300">{label}</label>
-      <span className="text-elkawera-accent font-mono font-bold">{value}</span>
-    </div>
-    <input
-      type="range"
-      min="1"
-      max="99"
-      value={value}
-      onChange={(e) => onChange(parseInt(e.target.value))}
-      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-elkawera-accent"
-    />
-  </div>
-);
+
 
 export const PostMatchStats: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -86,11 +71,7 @@ export const PostMatchStats: React.FC = () => {
     }
   }, [id, user, navigate]);
 
-  const handleStatChange = (key: keyof PhysicalStats, value: number) => {
-    if (stats) {
-      setStats({ ...stats, [key]: Number(value) });
-    }
-  };
+
 
   const handlePerformanceChange = (key: keyof typeof matchPerformance, val: string) => {
     const num = parseInt(val.replace(/[^0-9]/g, '')) || 0;
@@ -180,23 +161,7 @@ export const PostMatchStats: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 bg-white/5 p-8 rounded-2xl border border-white/10">
-        <div>
-          <h3 className="text-xl font-bold mb-6 text-elkawera-accent border-b border-white/10 pb-2">Offensive & Skill</h3>
-          <StatSlider label="Pace / Sprint Speed" value={stats.pace} onChange={(v) => handleStatChange('pace', v)} />
-          <StatSlider label="Shooting" value={stats.shooting} onChange={(v) => handleStatChange('shooting', v)} />
-          <StatSlider label="Passing" value={stats.passing} onChange={(v) => handleStatChange('passing', v)} />
-          <StatSlider label="Dribbling" value={stats.dribbling} onChange={(v) => handleStatChange('dribbling', v)} />
-          <StatSlider label="Agility" value={stats.agility} onChange={(v) => handleStatChange('agility', v)} />
-        </div>
-        <div>
-          <h3 className="text-xl font-bold mb-6 text-elkawera-accent border-b border-white/10 pb-2">Physical & Defensive</h3>
-          <StatSlider label="Defending" value={stats.defending} onChange={(v) => handleStatChange('defending', v)} />
-          <StatSlider label="Physical / Strength" value={stats.physical} onChange={(v) => handleStatChange('physical', v)} />
-          <StatSlider label="Stamina" value={stats.stamina} onChange={(v) => handleStatChange('stamina', v)} />
-          <StatSlider label="Acceleration" value={stats.acceleration} onChange={(v) => handleStatChange('acceleration', v)} />
-        </div>
-      </div>
+
 
       <div className="mt-8 flex justify-end">
         <div className="bg-black/30 p-4 rounded-lg mr-4 border border-white/10">

@@ -113,6 +113,8 @@ export const computeOverallWithPerformance = (
       if (goalsConceded > 0) {
         bonus -= Math.floor(goalsConceded / 4);
       }
+      // 1 penalty save = +1 ovr
+      bonus += Math.floor(perf.penaltySaves || 0);
       break;
   }
 

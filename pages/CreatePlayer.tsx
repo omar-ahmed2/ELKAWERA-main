@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { getPlayerById, savePlayer, getAllTeams, getPlayerRegistrationRequestById, updatePlayerRegistrationRequest, getUserById, updateUser, getUserByPlayerCardId } from '../utils/db';
-import { computeOverall, getCardType, computeOverallWithPerformance } from '../utils/calculation';
+import { getCardTypeFromScore } from '../utils/matchCalculations';
 import { Player, INITIAL_STATS, Position, CardType, Team } from '../types';
 import { PlayerCard } from '../components/PlayerCard';
 import { Upload, Save, ArrowLeft, Download, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react';
@@ -52,6 +52,13 @@ export const CreatePlayer: React.FC = () => {
     createdAt: Date.now(),
     updatedAt: Date.now(),
   });
+
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      cardType: getCardTypeFromScore(prev.overallScore)
+    }));
+  }, [formData.overallScore]);
 
   useEffect(() => {
     // Only admins can create/edit players
@@ -417,60 +424,52 @@ export const CreatePlayer: React.FC = () => {
             </div>
 
             <div className="bg-gradient-to-r from-elkawera-accent/10 to-transparent border border-elkawera-accent/30 rounded-xl p-4 mb-4">
-              <label className="block text-xs uppercase text-elkawera-accent mb-3 font-bold">Card Tier & Style</label>
+              <label className="block text-xs uppercase text-elkawera-accent mb-3 font-bold">Card Tier (Automatic)</label>
               <div className="grid grid-cols-4 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, cardType: 'Silver' }))}
-                  className={`p-4 rounded-lg border-2 transition-all ${formData.cardType === 'Silver'
-                    ? 'border-gray-400 bg-gray-900/50 shadow-lg scale-105'
-                    : 'border-white/20 bg-black/30 hover:border-white/40'
+                <div
+                  className={`p-4 rounded-lg border-2 transition-all opacity-50 ${formData.cardType === 'Silver'
+                    ? 'border-gray-400 bg-gray-900/50 shadow-lg scale-105 opacity-100'
+                    : 'border-white/5 bg-black/10'
                     }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">🥈</div>
-                    <div className={`text-sm font-bold ${formData.cardType === 'Silver' ? 'text-white' : 'text-gray-400'}`}>Silver</div>
+                    <div className={`text-sm font-bold ${formData.cardType === 'Silver' ? 'text-white' : 'text-gray-500'}`}>Silver</div>
                   </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, cardType: 'Gold' }))}
-                  className={`p-4 rounded-lg border-2 transition-all ${formData.cardType === 'Gold'
-                    ? 'border-yellow-400 bg-yellow-900/50 shadow-lg scale-105'
-                    : 'border-white/20 bg-black/30 hover:border-white/40'
+                </div>
+                <div
+                  className={`p-4 rounded-lg border-2 transition-all opacity-50 ${formData.cardType === 'Gold'
+                    ? 'border-yellow-400 bg-yellow-900/50 shadow-lg scale-105 opacity-100'
+                    : 'border-white/5 bg-black/10'
                     }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">🥇</div>
-                    <div className={`text-sm font-bold ${formData.cardType === 'Gold' ? 'text-yellow-300' : 'text-gray-400'}`}>Gold</div>
+                    <div className={`text-sm font-bold ${formData.cardType === 'Gold' ? 'text-yellow-300' : 'text-gray-500'}`}>Gold</div>
                   </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, cardType: 'Elite' }))}
-                  className={`p-4 rounded-lg border-2 transition-all ${formData.cardType === 'Elite'
-                    ? 'border-red-500 bg-red-900/50 shadow-lg scale-105'
-                    : 'border-white/20 bg-black/30 hover:border-white/40'
+                </div>
+                <div
+                  className={`p-4 rounded-lg border-2 transition-all opacity-50 ${formData.cardType === 'Elite'
+                    ? 'border-red-500 bg-red-900/50 shadow-lg scale-105 opacity-100'
+                    : 'border-white/5 bg-black/10'
                     }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">🔴</div>
-                    <div className={`text-sm font-bold ${formData.cardType === 'Elite' ? 'text-red-400' : 'text-gray-400'}`}>Elite</div>
+                    <div className={`text-sm font-bold ${formData.cardType === 'Elite' ? 'text-red-400' : 'text-gray-500'}`}>Elite</div>
                   </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, cardType: 'Platinum' }))}
-                  className={`p-4 rounded-lg border-2 transition-all ${formData.cardType === 'Platinum'
-                    ? 'border-cyan-400 bg-cyan-900/50 shadow-lg scale-105'
-                    : 'border-white/20 bg-black/30 hover:border-white/40'
+                </div>
+                <div
+                  className={`p-4 rounded-lg border-2 transition-all opacity-50 ${formData.cardType === 'Platinum'
+                    ? 'border-cyan-400 bg-cyan-900/50 shadow-lg scale-105 opacity-100'
+                    : 'border-white/5 bg-black/10'
                     }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">💎</div>
-                    <div className={`text-sm font-bold ${formData.cardType === 'Platinum' ? 'text-cyan-300' : 'text-gray-400'}`}>Platinum</div>
+                    <div className={`text-sm font-bold ${formData.cardType === 'Platinum' ? 'text-cyan-300' : 'text-gray-500'}`}>Platinum</div>
                   </div>
-                </button>
+                </div>
               </div>
             </div>
 
@@ -526,7 +525,7 @@ export const CreatePlayer: React.FC = () => {
 
           {!editId && !requestId && (
             <div className="p-4 bg-elkawera-green/20 rounded border border-elkawera-green/50 text-sm text-gray-300">
-              ⚠️ Physical stats and goal records can be added after the first match in the "Post-Match Stats" section.
+              ⚠️ Performance records and match stats can be added after the first match in the "Post-Match Stats" section.
             </div>
           )}
 
@@ -613,7 +612,7 @@ export const CreatePlayer: React.FC = () => {
               </div>
 
               <p className="text-xs text-gray-500 italic">
-                The overall rating now reflects the player's rarity and prestige. Physical attributes have been removed from the system.
+                The overall rating now reflects the player's performance, rarity, and match contributions.
               </p>
             </div>
           )}

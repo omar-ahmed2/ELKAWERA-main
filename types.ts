@@ -194,7 +194,7 @@ export interface MatchEvent {
   matchId: string;
   playerId: string;
   teamId: string;
-  type: 'goal' | 'assist' | 'clean_sheet' | 'penalty_save' | 'defensive_contribution';
+  type: 'goal' | 'assist' | 'clean_sheet' | 'penalty_save' | 'save' | 'defensive_contribution';
   minute?: number;
   timestamp: number;
 }
@@ -207,6 +207,7 @@ export interface PlayerEvaluation {
   defensiveContributions: number;
   cleanSheets: boolean;
   penaltySaves: number;
+  saves: number;
 }
 
 // ============================================

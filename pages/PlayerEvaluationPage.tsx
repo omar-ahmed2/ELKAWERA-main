@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMatchById, saveMatch, getPlayerById, savePlayer, getAllTeams, saveTeam, getCaptainStats, updateCaptainStats, awardRankPoints, updateTeamRankings } from '../utils/db'; // Updated imports
 import { Match, Player, Team, PlayerEvaluation, MatchEvent } from '../types';
-import { calculatePlayerOverallRating } from '../utils/matchCalculations';
+import { calculatePlayerOverallRating, getCardTypeFromScore } from '../utils/matchCalculations';
 import { Trophy, ArrowLeft, Save, CheckCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -72,6 +72,7 @@ export const PlayerEvaluationPage: React.FC = () => {
                         defensiveContributions: 0,
                         cleanSheets: false,
                         penaltySaves: 0,
+                        saves: 0,
                     };
                 });
                 setEvaluations(initialEvals);
@@ -155,6 +156,17 @@ export const PlayerEvaluationPage: React.FC = () => {
                         timestamp: Date.now()
                     });
                 }
+                // Saves
+                for (let i = 0; i < evaluation.saves; i++) {
+                    newEvents.push({
+                        id: uuidv4(),
+                        matchId: match.id,
+                        playerId: player.id,
+                        teamId,
+                        type: 'save',
+                        timestamp: Date.now()
+                    });
+                }
                 // Clean Sheet
                 if (evaluation.cleanSheets) {
                     newEvents.push({
@@ -175,12 +187,16 @@ export const PlayerEvaluationPage: React.FC = () => {
                     defensiveContributions: player.defensiveContributions + evaluation.defensiveContributions,
                     cleanSheets: player.cleanSheets + (evaluation.cleanSheets ? 1 : 0),
                     penaltySaves: player.penaltySaves + evaluation.penaltySaves,
+                    saves: (player.saves || 0) + evaluation.saves,
                     matchesPlayed: player.matchesPlayed + 1,
                     updatedAt: Date.now(),
                 };
 
                 // Calculate new overall rating using Fino's formula (placeholder for now)
                 updatedPlayer.overallScore = calculatePlayerOverallRating(updatedPlayer, evaluation);
+
+                // Update card case automatically based on new rating
+                updatedPlayer.cardType = getCardTypeFromScore(updatedPlayer.overallScore);
 
                 // Save updated player
                 await savePlayer(updatedPlayer);
@@ -294,6 +310,7 @@ export const PlayerEvaluationPage: React.FC = () => {
             defensiveContributions: isDEF || isFWD,
             cleanSheets: isDEF || isFWD || isGK,
             penaltySaves: isGK,
+            saves: isGK,
         };
     };
 
@@ -523,6 +540,21 @@ const PlayerEvaluationCard: React.FC<{
                             max="5"
                             value={evaluation.penaltySaves}
                             onChange={(e) => onUpdate('penaltySaves', Math.max(0, Math.min(5, parseInt(e.target.value) || 0)))}
+                            className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-center text-xl font-bold focus:border-elkawera-accent focus:outline-none"
+                        />
+                    </div>
+                )}
+
+                {/* Regular Saves (GK only) */}
+                {visibleFields.saves && (
+                    <div>
+                        <label className="block text-xs uppercase text-gray-400 mb-2">Regular Saves 🧤</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="20"
+                            value={evaluation.saves}
+                            onChange={(e) => onUpdate('saves', Math.max(0, Math.min(20, parseInt(e.target.value) || 0)))}
                             className="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-center text-xl font-bold focus:border-elkawera-accent focus:outline-none"
                         />
                     </div>

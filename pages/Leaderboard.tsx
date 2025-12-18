@@ -177,7 +177,7 @@ export const Leaderboard: React.FC = () => {
                         {playerSort === 'GOALS' && (player.goals || 0)}
                         {playerSort === 'ASSISTS' && (player.assists || 0)}
                         {playerSort === 'DEFENSE' && (player.defensiveContributions || 0)}
-                        {playerSort === 'SAVES' && ((player.penaltySaves || 0) + (player.cleanSheets || 0))}
+                        {playerSort === 'SAVES' && ((player.penaltySaves || 0) + (player.saves || 0) + (player.cleanSheets || 0))}
                     </div>
                     <div className="text-xs text-[var(--text-secondary)] uppercase tracking-wider font-bold">
                         {t(`stats.${playerSort.toLowerCase()}`)}

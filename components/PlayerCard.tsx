@@ -3,6 +3,7 @@ import { Player, Team } from '../types';
 import { getAllTeams, togglePlayerLike } from '../utils/db';
 import { Heart, Users, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getCardTypeFromScore } from '../utils/matchCalculations';
 
 interface PlayerCardProps {
     player: Player;
@@ -75,9 +76,10 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
     };
 
     const getThemeStyles = () => {
-        const patternId = `pattern-${player.cardType}-${uniqueId}`;
-        const foilId = `foil-${player.cardType}-${uniqueId}`;
-        const noiseId = `noise-${player.cardType}-${uniqueId}`;
+        const cardType = getCardTypeFromScore(player.overallScore);
+        const patternId = `pattern-${cardType}-${uniqueId}`;
+        const foilId = `foil-${cardType}-${uniqueId}`;
+        const noiseId = `noise-${cardType}-${uniqueId}`;
 
         // Role-based Color Accents
         let roleAccentText = 'text-white';
@@ -90,7 +92,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
             default: break;
         }
 
-        switch (player.cardType) {
+        switch (cardType) {
             case 'Platinum':
                 return {
                     wrapper: 'bg-[#020617]',

@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import {
-    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-    ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
-    LineChart, Line, CartesianGrid, AreaChart, Area
+    BarChart, Bar, XAxis, YAxis, Tooltip,
+    LineChart, Line, CartesianGrid, AreaChart, Area,
+    ResponsiveContainer
 } from 'recharts';
 import { Match, Player, Team } from '../types';
 import { Trophy, TrendingUp, Activity, Target, Shield, Calendar, Flame, Zap } from 'lucide-react';
@@ -32,6 +32,8 @@ export const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({ player, matc
         let assists = 0;
         let cleanSheets = 0;
         let defensiveContribs = 0;
+        let saves = 0;
+        let penaltySaves = 0;
 
         const matchHistory = playerMatches.map(match => {
             const isHome = match.homePlayerIds.includes(player.id);
@@ -53,11 +55,15 @@ export const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({ player, matc
             const mAssists = playerEvents.filter(e => e.type === 'assist').length;
             const mDef = playerEvents.filter(e => e.type === 'defensive_contribution').length;
             const mCS = playerEvents.some(e => e.type === 'clean_sheet');
+            const mSaves = playerEvents.filter(e => e.type === 'save').length;
+            const mPSaves = playerEvents.filter(e => e.type === 'penalty_save').length;
 
             goals += mGoals;
             assists += mAssists;
             defensiveContribs += mDef;
             if (mCS) cleanSheets++;
+            saves += mSaves;
+            penaltySaves += mPSaves;
 
             return {
                 date: new Date(match.finishedAt || 0).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
@@ -69,18 +75,10 @@ export const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({ player, matc
             };
         });
 
-        return { wins, draws, losses, totalMatches: playerMatches.length, matchHistory };
+        return { wins, draws, losses, totalMatches: playerMatches.length, matchHistory, goals, assists, cleanSheets, defensiveContribs, saves, penaltySaves };
     }, [playerMatches, player.id, teams]);
 
-    // 3. Radar Data (Attributes)
-    const radarData = [
-        { subject: 'Pace', A: player.stats.pace, fullMark: 100 },
-        { subject: 'Shooting', A: player.stats.shooting, fullMark: 100 },
-        { subject: 'Passing', A: player.stats.passing, fullMark: 100 },
-        { subject: 'Dribbling', A: player.stats.dribbling, fullMark: 100 },
-        { subject: 'Defending', A: player.stats.defending, fullMark: 100 },
-        { subject: 'Physical', A: player.stats.physical, fullMark: 100 },
-    ];
+
 
     // 4. Form Guide (Last 5)
     const formGuide = stats.matchHistory.slice(-5).map(m => m.result);
@@ -119,7 +117,7 @@ export const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({ player, matc
                             {formGuide.length === 0 ? <span className="text-gray-600">-</span> :
                                 formGuide.map((res, i) => (
                                     <span key={i} className={`text-xs font-bold px-1.5 py-0.5 rounded ${res === 'W' ? 'bg-green-500 text-black' :
-                                            res === 'D' ? 'bg-gray-500 text-white' : 'bg-red-500 text-white'
+                                        res === 'D' ? 'bg-gray-500 text-white' : 'bg-red-500 text-white'
                                         }`}>
                                         {res}
                                     </span>
@@ -138,38 +136,46 @@ export const PlayerStatistics: React.FC<PlayerStatisticsProps> = ({ player, matc
                 </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-                {/* Radar Chart - Attributes Analysis */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Target size={100} />
+            {/* Career Totals Row */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                    <Trophy className="text-yellow-400" size={20} />
+                    Career Achievements
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                    <div>
+                        <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Goals</div>
+                        <div className="text-3xl font-display font-black text-white">{stats.goals}</div>
                     </div>
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                        <Flame className="text-elkawera-accent" size={20} />
-                        Player Analysis
-                    </h3>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                                <PolarGrid stroke="#ffffff20" />
-                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 12, fontWeight: 'bold' }} />
-                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                <Radar
-                                    name={player.name}
-                                    dataKey="A"
-                                    stroke="#00ff9d"
-                                    strokeWidth={3}
-                                    fill="#00ff9d"
-                                    fillOpacity={0.4}
-                                />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#000', border: '1px solid #333', borderRadius: '8px' }}
-                                    itemStyle={{ color: '#00ff9d' }}
-                                />
-                            </RadarChart>
-                        </ResponsiveContainer>
+                    <div>
+                        <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Assists</div>
+                        <div className="text-3xl font-display font-black text-white">{stats.assists}</div>
                     </div>
+                    <div>
+                        <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Clean Sheets</div>
+                        <div className="text-3xl font-display font-black text-emerald-400">{stats.cleanSheets}</div>
+                    </div>
+                    <div>
+                        <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Def. Actions</div>
+                        <div className="text-3xl font-display font-black text-blue-400">{stats.defensiveContribs}</div>
+                    </div>
+                    {player.position === 'GK' && (
+                        <>
+                            <div>
+                                <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Regular Saves</div>
+                                <div className="text-3xl font-display font-black text-amber-400">{stats.saves}</div>
+                            </div>
+                            <div>
+                                <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Penalty Saves</div>
+                                <div className="text-3xl font-display font-black text-red-500">{stats.penaltySaves}</div>
+                            </div>
+                        </>
+                    )}
                 </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+
 
                 {/* Match History Chart */}
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6 relative overflow-hidden">
