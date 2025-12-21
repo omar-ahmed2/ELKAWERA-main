@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, LogOut, User as UserIcon, Settings, ChevronDown, BarChart2, Gamepad2, User, Bell, Trophy, Shield, Calendar, Shirt } from 'lucide-react';
+import { Menu, X, LogOut, User as UserIcon, Settings, ChevronDown, BarChart2, Gamepad2, User, Bell, Trophy, Shield, Calendar, Shirt, Package, Target } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAllPlayerRegistrationRequests, getAllKitRequests, subscribeToChanges, getUnreadCount } from '../utils/db';
 import { useSettings } from '../context/SettingsContext';
@@ -297,9 +297,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <Link to="/teams" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all">
                       {t('nav.teams')}
                     </Link>
-                    <Link to="/kits" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
-                      <Shirt size={18} /> Official Kits
-                    </Link>
+                    {user.role !== 'admin' && (
+                      <Link to="/kits" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
+                        <Shirt size={18} /> Official Kits
+                      </Link>
+                    )}
 
                     {user.role === 'captain' && (
                       <Link to="/captain/dashboard" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
@@ -314,7 +316,21 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     {user.role === 'admin' && (
                       <>
                         <Link to="/admin/matches" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
-                          <Trophy size={18} /> Matches
+                          <Target size={18} /> Matches
+                        </Link>
+                        <Link to="/admin/scouts" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
+                          <Shield size={18} /> Scouts Management
+                        </Link>
+                        <Link to="/admin/kits" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
+                          <Shirt size={18} /> Kit Management
+                        </Link>
+                        <Link to="/admin/kit-requests" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center justify-between">
+                          <span className="flex items-center gap-2"><Package size={18} /> Kit Requests</span>
+                          {pendingKitRequestsCount > 0 && (
+                            <span className="bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                              {pendingKitRequestsCount}
+                            </span>
+                          )}
                         </Link>
                         <Link to="/compare" className="block px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-all flex items-center gap-2">
                           <BarChart2 size={18} /> Compare Players
