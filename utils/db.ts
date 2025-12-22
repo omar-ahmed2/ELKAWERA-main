@@ -234,6 +234,7 @@ export const registerUser = async (
   name: string,
   email: string,
   password: string,
+  phone?: string,
   age?: number,
   height?: number,
   weight?: number,
@@ -259,6 +260,7 @@ export const registerUser = async (
         id: uuidv4(),
         name,
         email,
+        phone,
         passwordHash: password, // Storing as plain text for stability in this demo
         role,
         age,
@@ -1912,7 +1914,7 @@ export const registerScout = async (
   organization?: string
 ): Promise<User> => {
   // 1. Register User
-  const user = await registerUser(name, email, password, undefined, undefined, undefined, undefined, undefined, 'scout');
+  const user = await registerUser(name, email, password, phone, undefined, undefined, undefined, undefined, undefined, 'scout');
 
   // 2. Create Scout Profile
   const profile: ScoutProfile = {

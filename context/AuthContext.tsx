@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string, age?: number, height?: number, weight?: number, strongFoot?: 'Left' | 'Right', position?: string, role?: UserRole) => Promise<User>;
+  signUp: (name: string, email: string, password: string, phone?: string, age?: number, height?: number, weight?: number, strongFoot?: 'Left' | 'Right', position?: string, role?: UserRole) => Promise<User>;
   updateProfile: (name: string, profileImageUrl?: string, role?: UserRole) => Promise<void>;
   signOut: () => void;
 }
@@ -66,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string,
     email: string,
     password: string,
+    phone?: string,
     age?: number,
     height?: number,
     weight?: number,
@@ -75,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     setLoading(true);
     try {
-      const newUser = await registerUser(name, email, password, age, height, weight, strongFoot, position, role);
+      const newUser = await registerUser(name, email, password, phone, age, height, weight, strongFoot, position, role);
       setUser(newUser);
       localStorage.setItem('elkawera_user', JSON.stringify(newUser));
       return newUser;

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, Briefcase, Building2, MapPin } from 'lucide-react';
+import { UserPlus, Briefcase, Building2, MapPin, Eye, EyeOff } from 'lucide-react';
 import { registerScout } from '../utils/db';
 import { ScoutType } from '../types';
 
@@ -10,6 +10,7 @@ export const ScoutSignUp: React.FC = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [phone, setPhone] = useState('');
     const [scoutType, setScoutType] = useState<ScoutType>('Independent');
     const [organization, setOrganization] = useState('');
@@ -94,14 +95,24 @@ export const ScoutSignUp: React.FC = () => {
                     </div>
                     <div>
                         <label className="block text-xs uppercase text-gray-400 mb-2 font-bold tracking-wider">Password</label>
-                        <input
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-black/50 border border-white/20 rounded-xl p-4 text-white focus:border-purple-500 focus:outline-none transition-colors"
-                            placeholder="••••••••"
-                        />
+                        <div className="relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-black/50 border border-white/20 rounded-xl p-4 text-white focus:border-purple-500 focus:outline-none transition-colors pr-12"
+                                placeholder="••••••••"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                tabIndex={-1}
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="border-t border-white/10 pt-4 mt-4">

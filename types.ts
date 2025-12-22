@@ -76,6 +76,7 @@ export interface Notification {
 export interface User {
   id: string;
   email: string;
+  phone?: string; // New field for phone number
   name: string;
   passwordHash: string; // Simulated hash
   profileImageUrl?: string; // New field for profile photo
@@ -97,6 +98,7 @@ export interface PlayerRegistrationRequest {
   userId: string; // Link to User
   name: string;
   email: string;
+  phone?: string;
   age: number;
   height: number; // cm
   weight: number; // kg

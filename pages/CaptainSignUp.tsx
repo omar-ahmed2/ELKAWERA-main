@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Upload } from 'lucide-react';
+import { Shield, Upload, Eye, EyeOff } from 'lucide-react';
 import { saveTeam, saveCaptainStats } from '../utils/db';
 import { Team, CaptainStats } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,7 +9,9 @@ import { v4 as uuidv4 } from 'uuid';
 export const CaptainSignUp: React.FC = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [age, setAge] = useState<number>(18);
     const [teamName, setTeamName] = useState('');
     const [teamAbbreviation, setTeamAbbreviation] = useState('');
@@ -50,7 +52,7 @@ export const CaptainSignUp: React.FC = () => {
 
         try {
             // Create captain account
-            const newUser = await signUp(name, email, password, age, undefined, undefined, undefined, undefined, 'captain');
+            const newUser = await signUp(name, email, password, phone, age, undefined, undefined, undefined, undefined, 'captain');
 
             // Create team
             const team: Team = {
@@ -159,15 +161,37 @@ export const CaptainSignUp: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-xs uppercase text-gray-400 mb-2 font-bold tracking-wider">Password</label>
+                            <label className="block text-xs uppercase text-gray-400 mb-2 font-bold tracking-wider">Phone Number</label>
                             <input
-                                type="password"
+                                type="tel"
                                 required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
                                 className="w-full bg-black/50 border border-white/20 rounded-xl p-4 text-white focus:border-elkawera-accent focus:outline-none transition-colors"
-                                placeholder="••••••••"
+                                placeholder="+20 1xxxxxxxxx"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs uppercase text-gray-400 mb-2 font-bold tracking-wider">Password</label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full bg-black/50 border border-white/20 rounded-xl p-4 text-white focus:border-elkawera-accent focus:outline-none transition-colors pr-12"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
