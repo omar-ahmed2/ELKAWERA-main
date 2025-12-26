@@ -442,7 +442,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
 
                         {/* Large Watermark */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.08] scale-150 rotate-12">
-                            <img src="/elkawera.jpg" className="w-[300px] h-auto object-contain grayscale" alt="Watermark" />
+                            <img src="/ELKAWERA.jpeg" className="w-[400px] h-auto object-contain grayscale" alt="Watermark" />
                         </div>
 
                         {/* Content: Elkawera Logo + "Created by Elkawera" */}
@@ -451,9 +451,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                             <div className="relative group/logo">
                                 <div className={`absolute inset-0 rounded-full bg-white/40 blur-xl scale-110`}></div>
                                 <div
-                                    className={`relative w-40 h-40 rounded-full border-[5px] border-white/50 shadow-2xl flex items-center justify-center bg-white overflow-hidden z-20`}
+                                    className={`relative w-48 h-48 rounded-full border-[5px] border-white/50 shadow-2xl flex items-center justify-center bg-white overflow-hidden z-20`}
                                 >
-                                    <img src="/elkawera.jpg" className="w-full h-full object-cover" alt="Elkawera" />
+                                    <img src="/ELKAWERA.jpeg" className="w-full h-full object-cover" alt="Elkawera" />
                                 </div>
                             </div>
 

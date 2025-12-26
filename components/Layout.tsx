@@ -94,11 +94,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <div className="flex items-center justify-between h-16">
               {/* Logo */}
               <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3 group cursor-pointer" onClick={() => navigate('/')}>
-                <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <img
-                    src="/elkawera.jpg"
+                    src="/ELKAWERA.jpeg"
                     alt="ELKAWERA"
-                    className="w-6 h-6 sm:w-8 sm:h-8 object-contain rounded-full group-hover:scale-110 transition-transform duration-300"
+                    className="w-10 h-10 sm:w-14 sm:h-14 object-contain rounded-full group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
                 <span className="text-lg sm:text-2xl font-display font-bold italic tracking-tighter text-[var(--text-primary)] group-hover:scale-105 transition-transform duration-300">
