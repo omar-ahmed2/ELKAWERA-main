@@ -1,11 +1,11 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronRight, Zap, Shield, TrendingUp, Users, Target,
   Trophy, Star, Activity, BarChart3, Users2, Calendar,
   Search, Flag, Award, MousePointer2, ArrowRight, X
 } from 'lucide-react';
-import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring, useInView, useMotionValue, animate } from 'framer-motion';
 import { StatProgression } from '../components/StatProgression';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +16,34 @@ const fadeInUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
+  }
+};
+
+const fadeInLeft = {
+  hidden: { opacity: 0, x: -50 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
+  }
+};
+
+const fadeInRight = {
+  hidden: { opacity: 0, x: 50 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
+  }
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
   }
 };
 
@@ -25,16 +52,89 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
+      staggerChildren: 0.15
     }
   }
+};
+
+const Typewriter: React.FC<{ phrases: string[] }> = ({ phrases }) => {
+  const [index, setIndex] = useState(0);
+  const [displayText, setDisplayText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [speed, setSpeed] = useState(150);
+
+  useEffect(() => {
+    const handleTyping = () => {
+      const currentPhrase = phrases[index % phrases.length];
+      if (isDeleting) {
+        setDisplayText(currentPhrase.substring(0, displayText.length - 1));
+        setSpeed(50);
+      } else {
+        setDisplayText(currentPhrase.substring(0, displayText.length + 1));
+        setSpeed(150);
+      }
+
+      if (!isDeleting && displayText === currentPhrase) {
+        setSpeed(2000); // Pause at end
+        setIsDeleting(true);
+      } else if (isDeleting && displayText === '') {
+        setIsDeleting(false);
+        setIndex((prev) => prev + 1);
+        setSpeed(500); // Pause before next
+      }
+    };
+
+    const timer = setTimeout(handleTyping, speed);
+    return () => clearTimeout(timer);
+  }, [displayText, isDeleting, index, phrases, speed]);
+
+  return (
+    <span className="inline-block relative">
+      <span className="text-transparent bg-clip-text bg-gradient-to-r from-elkawera-accent via-emerald-400 to-cyan-500">
+        {displayText}
+      </span>
+      <motion.span
+        animate={{ opacity: [1, 0] }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: "steps(2)" }}
+        className="inline-block w-[3px] h-[0.9em] bg-elkawera-accent ml-1 align-middle"
+      />
+    </span>
+  );
+};
+
+const NumberCounter: React.FC<{ value: number; suffix?: string; prefix?: string; delay?: number }> = ({ value, suffix = '', prefix = '', delay = 0 }) => {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, latest => Math.floor(latest));
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: false, margin: "-50px" });
+
+  useEffect(() => {
+    if (isInView) {
+      const controls = animate(count, value, {
+        duration: 2.5,
+        delay: delay,
+        ease: [0.16, 1, 0.3, 1]
+      });
+      return controls.stop;
+    } else {
+      count.set(0);
+    }
+  }, [isInView, value, count, delay]);
+
+  return (
+    <motion.span ref={ref} className="tabular-nums">
+      {prefix}
+      <motion.span>{rounded}</motion.span>
+      {suffix}
+    </motion.span>
+  );
 };
 
 const SectionTitle: React.FC<{ title: string; subtitle?: string; centered?: boolean }> = ({ title, subtitle, centered = true }) => (
   <motion.div
     initial="hidden"
     whileInView="visible"
-    viewport={{ once: true, margin: "-100px" }}
+    viewport={{ once: false, margin: "-100px" }}
     variants={fadeInUp}
     className={`mb-16 ${centered ? 'text-center' : ''}`}
   >
@@ -110,9 +210,14 @@ export const Landing: React.FC = () => {
 
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-display font-bold uppercase leading-[0.9] text-[var(--text-primary)] tracking-tight">
                 {t('landing.hero.title_manage')} <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-elkawera-accent via-emerald-400 to-cyan-500 drop-shadow-[0_0_15px_rgba(0,255,157,0.3)]">
-                  {t('landing.hero.title_dynasty')}
-                </span>
+                <Typewriter
+                  phrases={[
+                    t('landing.hero.typewriter.1'),
+                    t('landing.hero.typewriter.2'),
+                    t('landing.hero.typewriter.3'),
+                    t('landing.hero.typewriter.4')
+                  ]}
+                />
               </h1>
 
               <p className="text-[var(--text-secondary)] text-base md:text-lg lg:text-xl max-w-xl mx-auto lg:mx-0 leading-relaxed">
@@ -172,8 +277,8 @@ export const Landing: React.FC = () => {
             <motion.div
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true }}
-              variants={staggerContainer}
+              viewport={{ once: false, margin: "-50px" }}
+              variants={fadeInLeft}
               className="order-2 lg:order-1"
             >
               <SectionTitle
@@ -209,9 +314,10 @@ export const Landing: React.FC = () => {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: false, margin: "-50px" }}
+              variants={fadeInRight}
               whileHover={{ rotateY: 15, rotateX: 10, scale: 1.05 }}
               className="order-1 lg:order-2 flex justify-center perspective-1000"
             >
@@ -260,10 +366,10 @@ export const Landing: React.FC = () => {
                     key={step}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true }}
+                    viewport={{ once: false, margin: "-50px" }}
                     variants={{
-                      hidden: { opacity: 0, y: 20 },
-                      visible: { opacity: 1, y: 0, transition: { delay: step * 0.2 } }
+                      hidden: { opacity: 0, scale: 0.8, y: 30 },
+                      visible: { opacity: 1, scale: 1, y: 0, transition: { delay: step * 0.1, duration: 0.6 } }
                     }}
                     className="relative text-center group"
                   >
@@ -286,7 +392,13 @@ export const Landing: React.FC = () => {
             subtitle="Built for every role in the football ecosystem."
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, margin: "-100px" }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8"
+          >
             <FeatureCard
               icon={<Zap size={28} />}
               title={t('landing.feat.stats.title')}
@@ -335,13 +447,18 @@ export const Landing: React.FC = () => {
               desc={t('landing.feat.leaderboards.desc')}
               color="pink"
             />
-          </div>
+          </motion.div>
         </section>
 
         {/* Player Card Evolution Section */}
-        <section className="container mx-auto px-4 md:px-6 py-20">
-
-          <div className="flex flex-col lg:flex-row gap-16 items-center">
+        <section className="container mx-auto px-4 md:px-6 py-20 overflow-hidden">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, margin: "-100px" }}
+            variants={staggerContainer}
+            className="flex flex-col lg:flex-row gap-16 items-center"
+          >
             <div className="lg:w-1/3">
               <SectionTitle
                 title={t('landing.evolution.title')}
@@ -387,15 +504,19 @@ export const Landing: React.FC = () => {
                 rating="94"
               />
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* Team Management & Analytics Split */}
         {/* Team Management & Analytics Split */}
-        <section className="container mx-auto px-4 md:px-6 py-16 md:py-32">
+        <section className="container mx-auto px-4 md:px-6 py-16 md:py-32 overflow-hidden">
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Team Mgmt */}
             <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: false, margin: "-50px" }}
+              variants={fadeInLeft}
               whileHover={{ scale: 1.01 }}
               className="bg-gradient-to-br from-blue-900/40 to-black p-8 md:p-12 rounded-[2.5rem] border border-blue-500/20 relative overflow-hidden group"
             >
@@ -428,6 +549,10 @@ export const Landing: React.FC = () => {
 
             {/* Analytics */}
             <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: false, margin: "-50px" }}
+              variants={fadeInRight}
               whileHover={{ scale: 1.01 }}
               className="bg-gradient-to-br from-purple-900/40 to-black p-8 md:p-12 rounded-[2.5rem] border border-purple-500/20 relative overflow-hidden group min-h-[500px]"
             >
@@ -487,8 +612,14 @@ export const Landing: React.FC = () => {
         </section>
 
         {/* Global Community Section */}
-        <section className="text-center py-16 md:py-20 overflow-hidden relative">
-          <div className="container mx-auto px-4 md:px-6 relative px-4">
+        <motion.section
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, margin: "-100px" }}
+          variants={scaleIn}
+          className="text-center py-16 md:py-20 overflow-hidden relative"
+        >
+          <div className="container mx-auto px-4 md:px-6 relative">
             <h2 className="text-3xl md:text-4xl lg:text-6xl font-display font-bold uppercase mb-4 md:mb-6">{t('landing.community.title')}</h2>
             <p className="text-[var(--text-secondary)] text-lg md:text-xl max-w-2xl mx-auto mb-8 md:mb-12">
               {t('landing.community.desc')}
@@ -496,15 +627,21 @@ export const Landing: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-12 text-[var(--text-primary)] mb-12 md:mb-16">
               <div>
-                <div className="text-4xl md:text-6xl font-black text-elkawera-accent">2,400+</div>
+                <div className="text-4xl md:text-6xl font-black text-elkawera-accent">
+                  <NumberCounter value={2400} suffix="+" />
+                </div>
                 <div className="text-xs md:text-sm uppercase tracking-widest text-[var(--text-secondary)] font-bold mt-2">Active Matches</div>
               </div>
               <div>
-                <div className="text-4xl md:text-6xl font-black text-elkawera-accent">150+</div>
+                <div className="text-4xl md:text-6xl font-black text-elkawera-accent">
+                  <NumberCounter value={150} suffix="+" delay={0.2} />
+                </div>
                 <div className="text-xs md:text-sm uppercase tracking-widest text-[var(--text-secondary)] font-bold mt-2">Verified Teams</div>
               </div>
               <div>
-                <div className="text-4xl md:text-6xl font-black text-elkawera-accent">45+</div>
+                <div className="text-4xl md:text-6xl font-black text-elkawera-accent">
+                  <NumberCounter value={45} suffix="+" delay={0.4} />
+                </div>
                 <div className="text-xs md:text-sm uppercase tracking-widest text-[var(--text-secondary)] font-bold mt-2">Scouts Waiting</div>
               </div>
             </div>
@@ -518,14 +655,15 @@ export const Landing: React.FC = () => {
               </Link>
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* Final CTA Section */}
         <section className="container mx-auto px-4 md:px-6 py-16 md:py-20">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: false, margin: "-100px" }}
+            variants={scaleIn}
             className="bg-elkawera-accent rounded-[2rem] md:rounded-[3rem] p-8 md:p-20 text-center relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>

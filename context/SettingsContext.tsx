@@ -47,7 +47,7 @@ const translations: Record<Language, Record<string, string>> = {
         'common.delete': 'Delete',
         'common.save': 'Save',
         // Landing
-        'landing.hero.title_manage': 'Manage Your',
+        'landing.hero.title_manage': 'Manage',
         'landing.hero.title_dynasty': 'Dynasty',
         'landing.hero.subtitle': 'The professional platform for tracking player evolution. Create teams, assign positions, and visualize stats progression after every match.',
         'landing.cta.create': 'Create Player',
@@ -100,6 +100,11 @@ const translations: Record<Language, Record<string, string>> = {
         // Analytics
         'landing.analytics.title': 'In-Depth Analytics',
         'landing.analytics.desc': 'Beautiful visualizations of your performance over time. Heatmaps, progress charts, and performance ratios.',
+        // Typewriter phrases
+        'landing.hero.typewriter.1': 'Your Legacy',
+        'landing.hero.typewriter.2': 'The Future',
+        'landing.hero.typewriter.3': 'Your Legend',
+        'landing.hero.typewriter.4': 'Your Destiny',
         // Community
         'landing.community.title': 'Community & Competition',
         'landing.community.desc': 'Join the largest street football community. participate in events, and build your reputation.',
@@ -314,6 +319,11 @@ const translations: Record<Language, Record<string, string>> = {
         // Analytics
         'landing.analytics.title': 'تحليلات متعمقة',
         'landing.analytics.desc': 'تمثيلات مرئية جميلة لأدائك بمرور الوقت. خرائط حرارية، رسوم بيانية للتقدم، ونسب الأداء.',
+        // Typewriter phrases
+        'landing.hero.typewriter.1': 'إرثك الكروي',
+        'landing.hero.typewriter.2': 'المستقبل',
+        'landing.hero.typewriter.3': 'أسطورتك',
+        'landing.hero.typewriter.4': 'مصيرك',
         // Community
         'landing.community.title': 'المجتمع والمنافسة',
         'landing.community.desc': 'انضم إلى أكبر مجتمع لكرة القدم في الشوارع، شارك في الفعاليات، وابنِ سمعتك.',
