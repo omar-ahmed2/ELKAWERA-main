@@ -479,29 +479,30 @@ export const Landing: React.FC = () => {
                 title={t('landing.evolution.silver')}
                 desc="Starting your journey. 60-69 Overall."
                 color="gray-400"
-                rating="64"
+                rating="69"
               />
               <EvolutionTier
                 tier="Tier 2"
                 title={t('landing.evolution.gold')}
                 desc="Rising through the ranks. 70-79 Overall."
                 color="yellow-500"
-                rating="78"
+                rating="79"
               />
+              
               <EvolutionTier
                 tier="Tier 3"
-                title={t('landing.evolution.platinum')}
+                title={t('landing.evolution.elite')}
                 desc="The elite bracket. 80-89 Overall."
-                color="cyan-400"
-                active={true}
+                color="purple-500"
                 rating="89"
               />
               <EvolutionTier
                 tier="Tier 4"
-                title={t('landing.evolution.elite')}
-                desc="Beyond legendary. Top 1% of players."
-                color="purple-500"
-                rating="94"
+                title={t('landing.evolution.platinum')}
+                desc="Beyond legendary. 90-99 Overall."
+                color="cyan-400"
+                active={true}
+                rating="99"
               />
             </div>
           </motion.div>
